@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تمرينتي — أول تطبيق تتبع تمرين عربي</title>
+<meta name="description" content="تمرينتي — سجّل تمارينك، تابع تقدمك، وكسر أرقامك القياسية. أول تطبيق تتبع تمرين بالعربي.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Orbitron:wght@600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #04070F;
+  --bg2:     #080C18;
+  --bg3:     #0C1020;
+  --bg4:     #111828;
+  --neon:    #2979FF;
+  --neon2:   #00B0FF;
+  --neon3:   #82B1FF;
+  --glow:    rgba(41,121,255,0.35);
+  --glow2:   rgba(0,176,255,0.25);
+  --border:  rgba(41,121,255,0.18);
+  --text:    #E8F0FE;
+  --dim:     rgba(232,240,254,0.45);
+  --cairo:   'Cairo', sans-serif;
+  --orb:     'Orbitron', sans-serif;
+  --mono:    'Share Tech Mono', monospace;
+  --ease:    cubic-bezier(0.16,1,0.3,1);
+}
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--cairo);overflow-x:hidden;direction:rtl}
+
+/* SCANLINES */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(41,121,255,.012) 2px,rgba(41,121,255,.012) 4px);pointer-events:none;z-index:9999}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:500;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 5%;transition:all .4s}
+nav.scrolled{background:rgba(4,7,15,.92);border-bottom:1px solid var(--border);backdrop-filter:blur(16px)}
+.nav-logo{display:flex;align-items:center;gap:10px}
+.nav-logo img{width:36px;height:36px;border-radius:8px;filter:drop-shadow(0 0 8px var(--neon))}
+.nav-logo-text{font-family:var(--cairo);font-size:20px;font-weight:900;color:var(--text);letter-spacing:1px}
+.nav-logo-text span{color:var(--neon);text-shadow:0 0 12px var(--neon)}
+.nav-cta{background:transparent;color:var(--neon);border:1px solid var(--neon);border-radius:0;font-family:var(--mono);font-size:12px;padding:9px 22px;cursor:pointer;transition:all .25s;letter-spacing:2px;clip-path:polygon(6px 0%,100% 0%,calc(100% - 6px) 100%,0% 100%);text-transform:uppercase}
+.nav-cta:hover{background:rgba(41,121,255,.12);box-shadow:0 0 20px var(--glow)}
+
+/* ── HERO ── */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:space-between;padding:80px 5% 60px;overflow:hidden;gap:40px}
+
+/* grid */
+.hero::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(41,121,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(41,121,255,.04) 1px,transparent 1px);background-size:48px 48px;mask-image:radial-gradient(ellipse 80% 80% at 50% 50%,black,transparent)}
+
+/* corner brackets */
+.hero-corner{position:absolute;width:60px;height:60px;border-color:var(--neon);border-style:solid;opacity:.4}
+.hero-corner.tl{top:20px;right:20px;border-width:2px 0 0 2px}
+.hero-corner.br{bottom:20px;left:20px;border-width:0 2px 2px 0}
+
+/* glow blob */
+.hero-glow{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle,rgba(41,121,255,.14),transparent 65%);top:50%;right:-10%;transform:translateY(-50%);pointer-events:none}
+
+.hero-left{flex:1;max-width:600px;position:relative;z-index:2}
+.hero-right{flex:0 0 auto;position:relative;z-index:2;display:flex;align-items:center;justify-content:center}
+
+.hero-tag{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--neon2);letter-spacing:3px;margin-bottom:24px;animation:fadeUp .8s var(--ease) .1s both;text-transform:uppercase}
+.hero-tag::before{content:'//';opacity:.5}
+
+.hero-title{font-family:var(--cairo);font-size:clamp(48px,8vw,96px);font-weight:900;line-height:.95;margin-bottom:20px;animation:fadeUp .8s var(--ease) .2s both;letter-spacing:-1px}
+.hero-title .t1{display:block;color:var(--text)}
+.hero-title .t2{display:block;color:var(--neon);text-shadow:0 0 30px var(--neon),0 0 60px rgba(41,121,255,.4),0 0 100px rgba(41,121,255,.2)}
+
+.hero-divider{width:80px;height:2px;background:linear-gradient(90deg,var(--neon),transparent);box-shadow:0 0 10px var(--neon);margin-bottom:20px;animation:fadeUp .8s var(--ease) .3s both}
+
+.hero-sub{font-size:clamp(14px,2vw,17px);color:var(--dim);line-height:1.8;margin-bottom:36px;animation:fadeUp .8s var(--ease) .4s both;font-weight:300;max-width:480px}
+.hero-sub strong{color:var(--text);font-weight:700}
+
+.hero-btns{display:flex;gap:14px;flex-wrap:wrap;animation:fadeUp .8s var(--ease) .5s both}
+
+.btn-neon{background:transparent;color:var(--neon);border:1px solid var(--neon);font-family:var(--mono);font-size:12px;font-weight:700;padding:14px 32px;cursor:pointer;letter-spacing:3px;text-transform:uppercase;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);transition:all .3s;position:relative;overflow:hidden}
+.btn-neon::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(41,121,255,.15),transparent);transform:translateX(-100%);transition:transform .4s}
+.btn-neon:hover::before{transform:translateX(0)}
+.btn-neon:hover{background:rgba(41,121,255,.1);box-shadow:0 0 30px var(--glow),inset 0 0 20px rgba(41,121,255,.05)}
+
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid rgba(232,240,254,.12);font-family:var(--cairo);font-size:14px;font-weight:600;padding:14px 28px;cursor:pointer;border-radius:4px;transition:all .25s}
+.btn-ghost:hover{border-color:rgba(232,240,254,.25);color:var(--text)}
+
+/* LOGO DISPLAY */
+.logo-display{position:relative;width:280px;height:280px;animation:fadeUp .8s var(--ease) .6s both}
+.logo-display img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 20px rgba(41,121,255,.6)) drop-shadow(0 0 60px rgba(41,121,255,.3));animation:logo-float 4s ease-in-out infinite}
+@keyframes logo-float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-10px) scale(1.02)}}
+
+/* ring pulse */
+.logo-ring{position:absolute;inset:-20px;border-radius:50%;border:1px solid rgba(41,121,255,.15);animation:ring-pulse 3s ease-out infinite}
+.logo-ring:nth-child(2){inset:-40px;animation-delay:.5s;opacity:.6}
+.logo-ring:nth-child(3){inset:-60px;animation-delay:1s;opacity:.3}
+@keyframes ring-pulse{0%{transform:scale(.95);opacity:.8}100%{transform:scale(1.05);opacity:0}}
+
+/* ── TICKER ── */
+.ticker{border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:14px 0;overflow:hidden;background:var(--bg2);position:relative}
+.ticker::before,.ticker::after{content:'';position:absolute;top:0;bottom:0;width:80px;z-index:2}
+.ticker::before{right:0;background:linear-gradient(to left,var(--bg2),transparent)}
+.ticker::after{left:0;background:linear-gradient(to right,var(--bg2),transparent)}
+.ticker-inner{display:flex;animation:ticker-scroll 24s linear infinite;white-space:nowrap}
+.ticker-item{display:inline-flex;align-items:center;gap:10px;padding:0 28px;font-family:var(--mono);font-size:12px;color:var(--dim);letter-spacing:2px;text-transform:uppercase}
+.ticker-sep{color:var(--neon);font-size:10px;text-shadow:0 0 8px var(--neon)}
+@keyframes ticker-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+
+/* ── STATS ── */
+.stats-strip{display:flex;justify-content:center;gap:0;border-bottom:1px solid var(--border)}
+.stat-block{flex:1;max-width:200px;padding:40px 20px;text-align:center;border-left:1px solid var(--border);position:relative;overflow:hidden}
+.stat-block:last-child{border-left:none}
+.stat-block::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--neon),transparent);transform:translateX(-100%);transition:transform .4s}
+.stat-block:hover::before{transform:translateX(0)}
+.stat-num{font-family:var(--orb);font-size:36px;font-weight:900;color:var(--neon);text-shadow:0 0 20px var(--glow);line-height:1}
+.stat-label{font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:2px;margin-top:8px;text-transform:uppercase}
+
+/* ── SECTION COMMON ── */
+.section{padding:100px 5%;max-width:1200px;margin:0 auto}
+.s-tag{font-family:var(--mono);font-size:10px;color:var(--neon2);letter-spacing:4px;text-transform:uppercase;margin-bottom:14px;opacity:.8}
+.s-title{font-family:var(--cairo);font-size:clamp(30px,4.5vw,52px);font-weight:900;line-height:1.1;margin-bottom:12px}
+.s-sub{font-size:15px;color:var(--dim);max-width:480px;line-height:1.7;font-weight:300}
+
+/* ── FEATURES ── */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin-top:60px;border:1px solid var(--border)}
+.feat-card{background:var(--bg2);padding:32px;position:relative;overflow:hidden;transition:background .3s}
+.feat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--neon),transparent);opacity:0;transition:opacity .3s}
+.feat-card:hover{background:var(--bg3)}
+.feat-card:hover::before{opacity:1}
+.feat-card::after{content:'';position:absolute;top:0;right:0;width:1px;height:100%;background:var(--border)}
+.feat-num{font-family:var(--mono);font-size:11px;color:rgba(41,121,255,.4);letter-spacing:2px;margin-bottom:16px}
+.feat-icon{font-size:28px;margin-bottom:14px;filter:drop-shadow(0 0 6px var(--glow))}
+.feat-title{font-family:var(--cairo);font-size:17px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.feat-desc{font-size:13px;color:var(--dim);line-height:1.7;font-weight:300}
+
+/* ── HOW IT WORKS ── */
+.how-wrap{padding:100px 5%;background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+.how-inner{max-width:1200px;margin:0 auto}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:60px;position:relative}
+.steps::before{content:'';position:absolute;top:28px;right:calc(33% + 20px);left:calc(33% + 20px);height:1px;background:linear-gradient(90deg,var(--neon),rgba(41,121,255,.2));box-shadow:0 0 8px var(--glow)}
+.step{position:relative}
+.step-num{font-family:var(--orb);font-size:48px;font-weight:900;color:rgba(41,121,255,.08);line-height:1;margin-bottom:8px;text-shadow:0 0 40px rgba(41,121,255,.3)}
+.step-dot{width:14px;height:14px;border-radius:50%;background:var(--neon);box-shadow:0 0 12px var(--neon);margin-bottom:16px}
+.step-title{font-family:var(--cairo);font-size:18px;font-weight:700;margin-bottom:8px}
+.step-desc{font-size:13px;color:var(--dim);line-height:1.7;font-weight:300}
+
+/* ── PRICING ── */
+.pricing-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:60px}
+.price-card{background:var(--bg2);border:1px solid var(--border);padding:36px;position:relative;overflow:hidden}
+.price-card.pro{border-color:rgba(41,121,255,.4);background:linear-gradient(135deg,rgba(41,121,255,.05),var(--bg2))}
+.price-card.pro::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--neon),var(--neon2),transparent);box-shadow:0 0 15px var(--glow)}
+.price-badge{display:inline-block;font-family:var(--mono);font-size:10px;color:var(--neon);border:1px solid var(--neon);padding:4px 14px;letter-spacing:3px;margin-bottom:20px;clip-path:polygon(4px 0%,100% 0%,calc(100% - 4px) 100%,0% 100%)}
+.price-name{font-family:var(--cairo);font-size:28px;font-weight:900;margin-bottom:8px}
+.price-desc{font-size:13px;color:var(--dim);margin-bottom:28px;line-height:1.6;font-weight:300}
+.price-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:32px}
+.price-list li{display:flex;align-items:center;gap:12px;font-size:13px;font-family:var(--cairo)}
+.price-list li .ico{width:20px;height:20px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
+.price-list li.yes .ico{background:rgba(41,121,255,.15);color:var(--neon);border:1px solid rgba(41,121,255,.3)}
+.price-list li.no .ico{background:rgba(255,255,255,.03);color:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.06)}
+.price-list li.no{color:var(--dim)}
+.price-btn{width:100%;border:none;font-family:var(--mono);font-size:12px;font-weight:700;padding:15px;cursor:pointer;letter-spacing:3px;text-transform:uppercase;transition:all .25s;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%)}
+.price-btn.free{background:transparent;color:var(--dim);border:1px solid rgba(255,255,255,.1)}
+.price-btn.free:hover{border-color:var(--border);color:var(--text)}
+.price-btn.premium{background:var(--neon);color:#000;font-weight:900}
+.price-btn.premium:hover{background:var(--neon2);box-shadow:0 0 30px var(--glow)}
+
+/* ── TESTIMONIALS ── */
+.reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:60px}
+.review-card{background:var(--bg2);border:1px solid var(--border);padding:24px;position:relative;overflow:hidden;transition:all .3s}
+.review-card::before{content:'';position:absolute;top:0;left:0;width:3px;height:0;background:var(--neon);box-shadow:0 0 10px var(--neon);transition:height .4s}
+.review-card:hover::before{height:100%}
+.review-card:hover{border-color:rgba(41,121,255,.3)}
+.review-stars{font-family:var(--mono);font-size:11px;color:var(--neon);letter-spacing:3px;margin-bottom:14px;text-shadow:0 0 8px var(--glow)}
+.review-text{font-size:13px;color:var(--dim);line-height:1.7;margin-bottom:16px;font-weight:300}
+.review-author{font-family:var(--cairo);font-size:13px;font-weight:700;color:var(--text)}
+.review-handle{font-family:var(--mono);font-size:10px;color:rgba(41,121,255,.5);letter-spacing:1px;margin-top:3px}
+
+/* ── PHONE MOCKUP ── */
+.phone-section{padding:100px 5%;display:flex;align-items:center;gap:80px;max-width:1200px;margin:0 auto}
+.phone-content{flex:1}
+.phone-visual{flex:0 0 auto}
+.phone-wrap{width:240px;height:480px;background:var(--bg3);border-radius:32px;border:1px solid rgba(41,121,255,.2);position:relative;overflow:hidden;box-shadow:0 0 60px rgba(41,121,255,.15),0 40px 80px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.05)}
+.phone-wrap::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--neon),transparent);box-shadow:0 0 15px var(--neon)}
+.phone-screen{padding:16px;height:100%;display:flex;flex-direction:column;gap:8px}
+.phone-header{display:flex;justify-content:space-between;align-items:center}
+.phone-gym-name{font-family:var(--mono);font-size:9px;color:var(--neon);letter-spacing:2px}
+.phone-day{font-family:var(--mono);font-size:8px;color:var(--dim)}
+.phone-card{background:rgba(41,121,255,.04);border:1px solid rgba(41,121,255,.1);border-radius:10px;padding:12px}
+.phone-card-title{font-family:var(--mono);font-size:8px;color:var(--neon);letter-spacing:1px;margin-bottom:8px}
+.p-ex{display:flex;justify-content:space-between;margin-bottom:4px}
+.p-ex-name{font-size:9px;color:var(--text)}
+.p-ex-val{font-family:var(--mono);font-size:8px;color:var(--dim)}
+.p-bar{height:2px;background:rgba(255,255,255,.05);border-radius:1px;margin-bottom:6px;overflow:hidden}
+.p-bar-fill{height:100%;background:linear-gradient(90deg,var(--neon),var(--neon2));border-radius:1px;animation:bar-grow 2s var(--ease) 1s both}
+@keyframes bar-grow{from{width:0}to{width:var(--w)}}
+.p-pr{background:rgba(41,121,255,.1);border:1px solid rgba(41,121,255,.2);border-radius:6px;padding:4px 8px;font-family:var(--mono);font-size:8px;color:var(--neon);text-shadow:0 0 6px var(--neon);margin-top:4px;display:inline-block}
+.p-stats{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.p-stat{background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:8px;text-align:center}
+.p-stat-n{font-family:var(--orb);font-size:16px;font-weight:700;color:var(--neon);text-shadow:0 0 10px var(--glow)}
+.p-stat-l{font-size:7px;color:var(--dim);margin-top:2px}
+
+/* ── CTA ── */
+.cta-section{padding:120px 5%;text-align:center;position:relative;overflow:hidden}
+.cta-glow{position:absolute;width:900px;height:400px;background:radial-gradient(ellipse,rgba(41,121,255,.1),transparent 65%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.cta-tag{font-family:var(--mono);font-size:10px;color:var(--neon2);letter-spacing:4px;margin-bottom:20px;display:block;text-transform:uppercase}
+.cta-title{font-family:var(--cairo);font-size:clamp(40px,7vw,80px);font-weight:900;line-height:1;margin-bottom:16px;position:relative}
+.cta-title span{color:var(--neon);text-shadow:0 0 30px var(--neon),0 0 60px rgba(41,121,255,.4)}
+.cta-sub{font-size:15px;color:var(--dim);margin-bottom:40px;position:relative;font-weight:300}
+.cta-btns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;position:relative}
+
+.insta-btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#833ab4,#fd1d1d,#fcb045);color:#fff;border:none;border-radius:4px;font-family:var(--cairo);font-size:14px;font-weight:700;padding:15px 28px;cursor:pointer;transition:all .25s}
+.insta-btn:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(253,29,29,.3)}
+.insta-btn svg{width:18px;height:18px}
+
+/* ── FOOTER ── */
+footer{border-top:1px solid var(--border);padding:40px 5%;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.footer-logo{display:flex;align-items:center;gap:10px}
+.footer-logo img{width:28px;height:28px;border-radius:6px;filter:drop-shadow(0 0 6px var(--neon))}
+.footer-logo-text{font-family:var(--cairo);font-size:16px;font-weight:900;color:var(--dim)}
+.footer-logo-text span{color:var(--neon)}
+.footer-copy{font-family:var(--mono);font-size:10px;color:rgba(232,240,254,.2);letter-spacing:1px}
+.footer-links{display:flex;gap:20px}
+.footer-links a{font-family:var(--mono);font-size:11px;color:var(--dim);text-decoration:none;transition:color .2s;letter-spacing:1px}
+.footer-links a:hover{color:var(--neon);text-shadow:0 0 8px var(--glow)}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.reveal.visible{opacity:1;transform:none}
+.reveal-d1{transition-delay:.1s}
+.reveal-d2{transition-delay:.2s}
+.reveal-d3{transition-delay:.3s}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:none}}
+
+/* GLITCH on logo hover */
+@keyframes glitch{
+  0%,100%{transform:translate(0);filter:hue-rotate(0deg)}
+  20%{transform:translate(-2px,1px);filter:hue-rotate(30deg)}
+  40%{transform:translate(2px,-1px)}
+  60%{transform:translate(-1px,2px);filter:hue-rotate(-20deg)}
+  80%{transform:translate(1px,-2px)}
+}
+.logo-display:hover img{animation:logo-float 4s ease-in-out infinite,glitch .4s ease}
+
+/* responsive */
+@media(max-width:900px){
+  .hero{flex-direction:column;text-align:center;align-items:center}
+  .hero-right{margin-top:20px}
+  .logo-display{width:200px;height:200px}
+  .feat-grid{grid-template-columns:1fr}
+  .steps{grid-template-columns:1fr;gap:28px}
+  .steps::before{display:none}
+  .pricing-grid,.reviews-grid{grid-template-columns:1fr}
+  .phone-section{flex-direction:column;gap:40px;text-align:center}
+  .stats-strip{flex-wrap:wrap}
+  .stat-block{min-width:50%;border-left:none;border-bottom:1px solid var(--border)}
+}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:rgba(41,121,255,.3);border-radius:2px}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="nav-logo">
+    <img src="logo.png" alt="تمرينتي">
+    <div class="nav-logo-text">تمريـ<span>نتي</span></div>
+  </div>
+  <button class="nav-cta" onclick="scrollToApp()">ابدأ_الآن</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-corner tl"></div>
+  <div class="hero-corner br"></div>
+  <div class="hero-glow"></div>
+
+  <div class="hero-left">
+    <div class="hero-tag">أول_تطبيق_تتبع_تمرين_عربي</div>
+    <h1 class="hero-title">
+      <span class="t1">تمرينك</span>
+      <span class="t2">في إيدك</span>
+    </h1>
+    <div class="hero-divider"></div>
+    <p class="hero-sub">
+      سجّل كل تمرين، تابع <strong>تقدمك الحقيقي</strong>، واحتفظ بأرقامك القياسية.<br>
+      مفيش تطبيق تاني بيتكلم عربي زيك.
+    </p>
+    <div class="hero-btns">
+      <button class="btn-neon" onclick="goToApp()">ابدأ_مجاناً ⚡</button>
+      <button class="btn-ghost" onclick="scrollToPricing()">اشتري Pro</button>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div class="logo-display">
+      <div class="logo-ring"></div>
+      <div class="logo-ring"></div>
+      <div class="logo-ring"></div>
+      <img src="logo.png" alt="تمرينتي Logo">
+    </div>
+  </div>
+</section>
+
+<!-- TICKER -->
+<div class="ticker">
+  <div class="ticker-inner">
+    <span class="ticker-item"><span class="ticker-sep">◆</span>سجّل_تمارينك</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>تابع_الوزن</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>أرقام_قياسية</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>برامج_مخصصة</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>جيمات_متعددة</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>مزامنة_تلقائية</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>100%_عربي</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>سجّل_تمارينك</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>تابع_الوزن</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>أرقام_قياسية</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>برامج_مخصصة</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>جيمات_متعددة</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>مزامنة_تلقائية</span>
+    <span class="ticker-item"><span class="ticker-sep">◆</span>100%_عربي</span>
+  </div>
+</div>
+
+<!-- STATS -->
+<div class="stats-strip">
+  <div class="stat-block reveal">
+    <div class="stat-num"><span class="counter" data-t="58">0</span>+</div>
+    <div class="stat-label">تمرين_في_المكتبة</div>
+  </div>
+  <div class="stat-block reveal reveal-d1">
+    <div class="stat-num"><span class="counter" data-t="100">0</span>%</div>
+    <div class="stat-label">بالعربي</div>
+  </div>
+  <div class="stat-block reveal reveal-d2">
+    <div class="stat-num"><span class="counter" data-t="3">0</span></div>
+    <div class="stat-label">جيمات_مجاناً</div>
+  </div>
+  <div class="stat-block reveal reveal-d3">
+    <div class="stat-num" style="color:var(--neon2);text-shadow:0 0 20px var(--glow2)">∞</div>
+    <div class="stat-label">مع_Pro</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<section class="section">
+  <div class="s-tag reveal">// المميزات</div>
+  <h2 class="s-title reveal">كل حاجة<br><span style="color:var(--neon);text-shadow:0 0 20px var(--glow)">محتاجها</span></h2>
+  <p class="s-sub reveal">مصمم للي بيتمرن جد — مش تطبيق تاني ترجمة إنجليزية</p>
+
+  <div class="feat-grid">
+    <div class="feat-card reveal">
+      <div class="feat-num">01</div>
+      <div class="feat-icon">🏋️</div>
+      <div class="feat-title">تسجيل التمارين</div>
+      <div class="feat-desc">سجّل كل سيت وتقيله وعدد الرباعات. التاريخ كله محفوظ وبيبان في ثانية.</div>
+    </div>
+    <div class="feat-card reveal reveal-d1">
+      <div class="feat-num">02</div>
+      <div class="feat-icon">🏆</div>
+      <div class="feat-title">أرقام قياسية (PR)</div>
+      <div class="feat-desc">التطبيق بيكتشف تلقائياً لما بتكسر رقمك — ويحتفل بيك. ابقى عارف أقوى وزن رفعته.</div>
+    </div>
+    <div class="feat-card reveal reveal-d2">
+      <div class="feat-num">03</div>
+      <div class="feat-icon">📈</div>
+      <div class="feat-title">تتبع التقدم</div>
+      <div class="feat-desc">رسوم بيانية لوزن جسمك وحجم تدريبك الشهري. شوف كيف بتكبر مع الوقت بالأرقام.</div>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-num">04</div>
+      <div class="feat-icon">🏢</div>
+      <div class="feat-title">جيمات متعددة</div>
+      <div class="feat-desc">اشتغل في أكتر من جيم وكل واحد بياناته منفصلة تماماً. Free: 3 جيمات. Pro: ∞</div>
+    </div>
+    <div class="feat-card reveal reveal-d1">
+      <div class="feat-num">05</div>
+      <div class="feat-icon">📋</div>
+      <div class="feat-title">برامج مخصصة</div>
+      <div class="feat-desc">ابني برنامجك الخاص — PPL، Upper/Lower، Full Body — وبدّل بينهم في أي وقت.</div>
+    </div>
+    <div class="feat-card reveal reveal-d2">
+      <div class="feat-num">06</div>
+      <div class="feat-icon">☁️</div>
+      <div class="feat-title">مزامنة تلقائية</div>
+      <div class="feat-desc">بياناتك على السيرفر — افتح على أي جهاز وتلاقي كل حاجة زي ما تركتها.</div>
+    </div>
+  </div>
+</section>
+
+<!-- PHONE + HOW TO USE -->
+<div style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <div class="phone-section">
+    <div class="phone-content">
+      <div class="s-tag reveal">// شكله ازاي</div>
+      <h2 class="s-title reveal">واجهة مصممة<br><span style="color:var(--neon)">للعقل العربي</span></h2>
+      <p class="s-sub reveal" style="margin-bottom:28px">مش ترجمة — مبني من الصفر للاتجاه من اليمين لليسار وللطريقة اللي بنفكر بيها.</p>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="reveal" style="display:flex;align-items:flex-start;gap:14px">
+          <div style="width:28px;height:28px;border:1px solid var(--neon);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--neon);flex-shrink:0;box-shadow:0 0 8px var(--glow)">01</div>
+          <div><div style="font-weight:700;margin-bottom:4px">افتح التطبيق</div><div style="font-size:13px;color:var(--dim);font-weight:300">مفيش تنزيل. مفيش حساب. افتح الرابط وابدأ.</div></div>
+        </div>
+        <div class="reveal reveal-d1" style="display:flex;align-items:flex-start;gap:14px">
+          <div style="width:28px;height:28px;border:1px solid var(--neon);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--neon);flex-shrink:0;box-shadow:0 0 8px var(--glow)">02</div>
+          <div><div style="font-weight:700;margin-bottom:4px">سجّل تمرينك</div><div style="font-size:13px;color:var(--dim);font-weight:300">اختار التمارين، ادخل الأوزان، وخلّي التطبيق يتابع.</div></div>
+        </div>
+        <div class="reveal reveal-d2" style="display:flex;align-items:flex-start;gap:14px">
+          <div style="width:28px;height:28px;border:1px solid var(--neon);border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:10px;color:var(--neon);flex-shrink:0;box-shadow:0 0 8px var(--glow)">03</div>
+          <div><div style="font-weight:700;margin-bottom:4px">شوف نتايجك</div><div style="font-size:13px;color:var(--dim);font-weight:300">PRs، تقدم، رسوم بيانية — كل حاجة واضحة.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="phone-visual reveal">
+      <div class="phone-wrap">
+        <div class="phone-screen">
+          <div class="phone-header">
+            <div class="phone-gym-name">IRON_HOUSE_GYM</div>
+            <div class="phone-day">PUSH_A</div>
+          </div>
+          <div class="phone-card">
+            <div class="phone-card-title">// PUSH_A · اليوم</div>
+            <div class="p-ex"><span class="p-ex-name">بنش بريس</span><span class="p-ex-val">4×8 · 100kg</span></div>
+            <div class="p-bar"><div class="p-bar-fill" style="--w:85%"></div></div>
+            <div class="p-ex"><span class="p-ex-name">أوفرهيد بريس</span><span class="p-ex-val">3×10 · 60kg</span></div>
+            <div class="p-bar"><div class="p-bar-fill" style="--w:65%;animation-delay:1.3s"></div></div>
+            <div class="p-ex"><span class="p-ex-name">رفعات جانبية</span><span class="p-ex-val">4×15 · 12kg</span></div>
+            <div class="p-bar"><div class="p-bar-fill" style="--w:100%;animation-delay:1.6s"></div></div>
+            <div class="p-pr">⚡ PR جديد — بنش بريس</div>
+          </div>
+          <div class="p-stats">
+            <div class="p-stat"><div class="p-stat-n">47</div><div class="p-stat-l">تمرين</div></div>
+            <div class="p-stat"><div class="p-stat-n">12</div><div class="p-stat-l">PR</div></div>
+          </div>
+          <div class="phone-card" style="flex:1">
+            <div class="phone-card-title">// التقدم</div>
+            <div style="display:flex;align-items:flex-end;gap:4px;height:40px">
+              <div style="width:12px;background:rgba(41,121,255,.2);border-radius:2px;height:30%;animation:grow-bar .8s var(--ease) 2s both"></div>
+              <div style="width:12px;background:rgba(41,121,255,.3);border-radius:2px;height:50%;animation:grow-bar .8s var(--ease) 2.1s both"></div>
+              <div style="width:12px;background:rgba(41,121,255,.5);border-radius:2px;height:70%;animation:grow-bar .8s var(--ease) 2.2s both"></div>
+              <div style="width:12px;background:rgba(41,121,255,.7);border-radius:2px;height:60%;animation:grow-bar .8s var(--ease) 2.3s both"></div>
+              <div style="width:12px;background:var(--neon);border-radius:2px;height:90%;box-shadow:0 0 6px var(--neon);animation:grow-bar .8s var(--ease) 2.4s both"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes grow-bar{from{height:0;opacity:0}to{opacity:1}}
+</style>
+
+<!-- PRICING -->
+<section class="section" id="pricing">
+  <div class="s-tag reveal">// الأسعار</div>
+  <h2 class="s-title reveal">بسيط وواضح</h2>
+  <p class="s-sub reveal">ابدأ مجاناً — اشترك لما تحتاج المزايا الكاملة</p>
+
+  <div class="pricing-grid">
+    <div class="price-card reveal">
+      <div class="price-name">Free</div>
+      <div class="price-desc">كل حاجة أساسية لتتبع تمارينك</div>
+      <ul class="price-list">
+        <li class="yes"><span class="ico">✓</span> تسجيل التمارين كامل</li>
+        <li class="yes"><span class="ico">✓</span> أرقام قياسية (PR)</li>
+        <li class="yes"><span class="ico">✓</span> تتبع وزن الجسم</li>
+        <li class="yes"><span class="ico">✓</span> رسوم بيانية للتقدم</li>
+        <li class="yes"><span class="ico">✓</span> 3 جيمات</li>
+        <li class="no"><span class="ico">✕</span> برامج تدريبية مخصصة</li>
+        <li class="no"><span class="ico">✕</span> مزامنة بين الأجهزة</li>
+        <li class="no"><span class="ico">✕</span> جيمات غير محدودة</li>
+      </ul>
+      <button class="price-btn free" onclick="goToApp()">ابدأ_مجاناً</button>
+    </div>
+
+    <div class="price-card pro reveal reveal-d1">
+      <div class="price-badge">⚡ PRO</div>
+      <div class="price-name" style="color:var(--neon);text-shadow:0 0 20px var(--glow)">Pro</div>
+      <div class="price-desc">للي بيتمرن جد ومحتاج كل المميزات</div>
+      <ul class="price-list">
+        <li class="yes"><span class="ico">✓</span> كل مميزات Free</li>
+        <li class="yes"><span class="ico">✓</span> جيمات غير محدودة</li>
+        <li class="yes"><span class="ico">✓</span> برامج تدريبية مخصصة</li>
+        <li class="yes"><span class="ico">✓</span> مزامنة بين كل أجهزتك</li>
+        <li class="yes"><span class="ico">✓</span> بياناتك محفوظة على السيرفر</li>
+        <li class="yes"><span class="ico">✓</span> دعم مباشر عبر انستجرام</li>
+      </ul>
+      <button class="price-btn premium" onclick="openInsta()">تواصل_للاشتراك</button>
+    </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<div style="background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:100px 5%">
+  <div style="max-width:1200px;margin:0 auto">
+    <div class="s-tag reveal">// آراء_المستخدمين</div>
+    <h2 class="s-title reveal">الناس بتقول إيه</h2>
+    <div class="reviews-grid">
+      <div class="review-card reveal">
+        <div class="review-stars">★ ★ ★ ★ ★</div>
+        <div class="review-text">"أخيراً تطبيق بالعربي يفهم إزاي بنفكر. من يوم ما بدأت كسرت 8 PRs."</div>
+        <div class="review-author">أحمد م.</div>
+        <div class="review-handle">PPL_LIFTER · 8_months</div>
+      </div>
+      <div class="review-card reveal reveal-d1">
+        <div class="review-stars">★ ★ ★ ★ ★</div>
+        <div class="review-text">"بستخدمه في جيمين مختلفين والـ sync بيخليني مش مهتم أنا بموبايل مين."</div>
+        <div class="review-author">كريم ع.</div>
+        <div class="review-handle">PRO_USER · UPPER_LOWER</div>
+      </div>
+      <div class="review-card reveal reveal-d2">
+        <div class="review-stars">★ ★ ★ ★ ★</div>
+        <div class="review-text">"الرسوم البيانية دافعة جداً — شايف الفرق من شهر لشهر بالأرقام."</div>
+        <div class="review-author">محمد ه.</div>
+        <div class="review-handle">BULK_PHASE · 6_months</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<section class="cta-section" id="app-start">
+  <div class="cta-glow"></div>
+  <span class="cta-tag reveal">// sys.start — protocol_alpha</span>
+  <h2 class="cta-title reveal">ابدأ<br><span>دلوقتي</span></h2>
+  <p class="cta-sub reveal">مجاني 100% · مفيش تنزيل · مفيش تسجيل</p>
+  <div class="cta-btns reveal">
+    <button class="btn-neon" style="font-size:14px;padding:16px 48px" onclick="goToApp()">تشغيل_تمرينتي ⚡</button>
+    <button class="insta-btn" onclick="openInsta()">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+      انستجرام
+    </button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <img src="logo.png" alt="تمرينتي">
+    <div class="footer-logo-text">تمريـ<span>نتي</span></div>
+  </div>
+  <div class="footer-copy">© 2025 TAMREENI · MADE_IN_EGYPT 🇪🇬</div>
+  <div class="footer-links">
+    <a href="#" onclick="goToApp()">التطبيق</a>
+    <a href="#pricing">الأسعار</a>
+    <a href="#" onclick="openInsta()">انستجرام</a>
+  </div>
+</footer>
+
+<script>
+const APP_URL   = 'tamreeni.html';
+const INSTA_URL = 'https://www.instagram.com/7sryan/';
+
+function goToApp()        { window.location.href = APP_URL }
+function openInsta()      { window.open(INSTA_URL, '_blank') }
+function scrollToApp()    { document.getElementById('app-start').scrollIntoView({behavior:'smooth'}) }
+function scrollToPricing(){ document.getElementById('pricing').scrollIntoView({behavior:'smooth'}) }
+
+// NAV
+window.addEventListener('scroll', () => {
+  document.getElementById('nav').classList.toggle('scrolled', scrollY > 40);
+});
+
+// REVEAL
+const obs = new IntersectionObserver(entries =>
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible') }),
+  {threshold:.1}
+);
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// COUNTERS
+const cobs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(!e.isIntersecting) return;
+    const el = e.target, target = +el.dataset.t, start = performance.now();
+    const tick = now => {
+      const p = Math.min((now-start)/1400,1);
+      el.textContent = Math.round((1-Math.pow(1-p,3))*target);
+      if(p<1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+    cobs.unobserve(el);
+  });
+},{threshold:.5});
+document.querySelectorAll('.counter').forEach(el => cobs.observe(el));
+</script>
+</body>
+</html>
