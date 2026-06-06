@@ -2087,7 +2087,10 @@ self.addEventListener('notificationclick', e => {
     <div style="margin-bottom:16px">
       <div style="font-family:var(--font-condensed);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">عدد الأيام في الأسبوع</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap" id="prog-days-picker">
-        ${[3,4,5,6].map(d=>`<div class="modal-option" style="padding:10px 20px;flex:1;text-align:center" onclick="selectProgDays(${d},this)">${d} أيام</div>`).join('')}
+        <div class="modal-option" style="padding:10px 20px;flex:1;text-align:center" onclick="selectProgDays(3,this)">3 أيام</div>
+        <div class="modal-option" style="padding:10px 20px;flex:1;text-align:center" onclick="selectProgDays(4,this)">4 أيام</div>
+        <div class="modal-option" style="padding:10px 20px;flex:1;text-align:center" onclick="selectProgDays(5,this)">5 أيام</div>
+        <div class="modal-option" style="padding:10px 20px;flex:1;text-align:center" onclick="selectProgDays(6,this)">6 أيام</div>
       </div>
     </div>
     <div style="display:flex;gap:8px">
