@@ -4527,12 +4527,14 @@ async function sendCoachMsg(overrideQuestion) {
 
   input.value = '';
   addCoachMsg('user', question);
-  const typing = addTypingIndicator();
+  addTypingIndicator();
 
   try {
-    // جمع بيانات المستخدم
     const gym = activeGym();
     const todayWorkout = activeWorkout || state.log[state.log.length - 1] || null;
+
+    // بعت آخر 6 رسايل كـ history للسياق
+    const history = coachHistory.slice(-6);
 
     const res = await fetch(COACH_FN_URL, {
       method: 'POST',
@@ -4543,7 +4545,8 @@ async function sendCoachMsg(overrideQuestion) {
         prs:          state.prs || {},
         bodyWeights:  state.bodyWeights || [],
         todayWorkout: todayWorkout,
-        question:     question
+        question:     question,
+        history:      history
       })
     });
 
@@ -4553,7 +4556,7 @@ async function sendCoachMsg(overrideQuestion) {
     if (data.reply) {
       addCoachMsg('ai', data.reply);
     } else {
-      addCoachMsg('ai', '⚠️ حصل خطأ — جرب تاني');
+      addCoachMsg('ai', '⚠️ ' + (data.error || 'حصل خطأ — جرب تاني'));
     }
   } catch (e) {
     removeTypingIndicator();
