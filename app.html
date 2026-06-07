@@ -2814,25 +2814,24 @@ function renderDash() {
   // Update gym indicator in hero
   const gym = activeGym();
   const gymNameEl = document.getElementById('hero-gym-name');
-  const gymDotEl = document.getElementById('hero-gym-dot');
-  if (gymNameEl) gymNameEl.textContent = gym.name;
-  if (gymDotEl) gymDotEl.style.background = gym.color;
+  const gymDotEl  = document.getElementById('hero-gym-dot');
+  if (gymNameEl) gymNameEl.textContent = gym ? gym.name : 'أضف جيم';
+  if (gymDotEl)  gymDotEl.style.background = gym ? gym.color : 'var(--text-muted)';
 
   // Week grid
   const grid = document.getElementById('week-grid');
   const days = ['أح','إث','ثل','أر','خم','جم','سب'];
   const today = new Date().getDay();
   const todayDateStr = dateStr(new Date());
-  grid.innerHTML = '';
+  if (grid) grid.innerHTML = '';
   
-  for (let i = 0; i < 7; i++) {
+  if (grid) for (let i = 0; i < 7; i++) {
     const d = new Date();
     d.setDate(d.getDate() - today + i);
     const ds = dateStr(d);
     const done = state.log.some(l => l.date === ds);
     const isRest = !done && state.restDays.includes(ds);
     const isToday = ds === todayDateStr;
-    const isFuture = d > new Date() && ds !== todayDateStr;
     const el = document.createElement('div');
     el.className = 'week-day' + (done ? ' done' : isRest ? ' rest' : '') + (isToday && !done ? ' today' : '');
     el.innerHTML = `<span>${days[i]}</span>${done ? '<span style="font-size:8px">💪</span>' : isRest ? '<span style="font-size:8px">😴</span>' : ''}`;
@@ -3995,7 +3994,7 @@ if (heroDate) {
   heroDate.textContent = d.toLocaleDateString('ar-EG', { weekday:'short', month:'short', day:'numeric' });
 }
 renderDash();
-restoreActiveWorkout();
+try { restoreActiveWorkout(); } catch(e) { console.warn('restoreActiveWorkout:', e); }
 if (window._hideLoadingScreen) window._hideLoadingScreen();
 // Show first-time setup if no gyms
 setTimeout(() => checkFirstTimeSetup(), 400);
