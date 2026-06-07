@@ -1607,6 +1607,176 @@ body::before {
   margin-bottom: env(safe-area-inset-bottom, 16px);
 }
 
+/* ===== AI COACH ===== */
+.coach-screen {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 3000;
+  flex-direction: column;
+  background-image:
+    linear-gradient(rgba(41,121,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(41,121,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.coach-screen.open { display: flex; }
+
+.coach-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg2);
+  flex-shrink: 0;
+}
+.coach-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px var(--glow);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.coach-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+
+.coach-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.coach-msg {
+  max-width: 88%;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: var(--font-main);
+}
+.coach-msg.ai {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-right: 3px solid var(--gold);
+  align-self: flex-end;
+  border-radius: 14px 4px 14px 14px;
+  color: var(--text);
+}
+.coach-msg.user {
+  background: rgba(41,121,255,0.1);
+  border: 1px solid rgba(41,121,255,0.2);
+  align-self: flex-start;
+  border-radius: 4px 14px 14px 14px;
+  color: var(--text-dim);
+  font-size: 13px;
+}
+.coach-msg.typing {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-right: 3px solid rgba(41,121,255,0.3);
+  align-self: flex-end;
+  border-radius: 14px 4px 14px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 16px;
+}
+.typing-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  animation: typing-bounce 1.2s ease-in-out infinite;
+  box-shadow: 0 0 6px var(--glow);
+}
+.typing-dot:nth-child(2) { animation-delay: .2s; }
+.typing-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes typing-bounce {
+  0%,60%,100% { transform: translateY(0); opacity: .5; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+.coach-quick-btns {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 10px;
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+.coach-quick {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 7px 14px;
+  font-family: var(--font-main);
+  font-size: 12px;
+  color: var(--text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all .2s;
+  flex-shrink: 0;
+}
+.coach-quick:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 10px var(--glow);
+}
+
+.coach-input-row {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg2);
+  flex-shrink: 0;
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+.coach-input {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  color: var(--text);
+  font-family: var(--font-main);
+  font-size: 14px;
+  padding: 10px 16px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  resize: none;
+}
+.coach-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px var(--glow);
+}
+.coach-send {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all .2s;
+  box-shadow: 0 0 12px var(--glow);
+}
+.coach-send:hover { transform: scale(1.1); box-shadow: 0 0 20px var(--glow); }
+.coach-send svg { width: 18px; height: 18px; fill: #fff; }
+
 /* ===== FIRST TIME SETUP SCREEN ===== */
 #first-time-screen {
   display: none;
@@ -2045,9 +2215,44 @@ self.addEventListener('notificationclick', e => {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       الجيم
     </button>
+    <button class="nav-btn" onclick="openCoach()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><path d="M18 2v4h4"/></svg>
+      كوتش
+    </button>
   </nav>
 
 </div><!-- end #app -->
+
+<!-- ===== AI COACH SCREEN ===== -->
+<div class="coach-screen" id="coach-screen">
+  <div class="coach-header">
+    <div class="coach-title">
+      <div class="coach-dot"></div>
+      // كوتش تمرينتي
+    </div>
+    <button onclick="closeCoach()" style="background:transparent;border:none;color:var(--text-muted);cursor:pointer;font-size:20px;padding:4px">✕</button>
+  </div>
+
+  <div class="coach-messages" id="coach-messages"></div>
+
+  <div class="coach-quick-btns" id="coach-quick-btns">
+    <button class="coach-quick" onclick="askCoach('حلل أدائي النهارده')">📊 حلل أدائي</button>
+    <button class="coach-quick" onclick="askCoach('إيه أوزاني الجاية؟')">⚡ الأوزان الجاية</button>
+    <button class="coach-quick" onclick="askCoach('تقدمي في الشهر الأخير؟')">📈 تقدم الشهر</button>
+    <button class="coach-quick" onclick="askCoach('إيه أضعف نقطة عندي؟')">🎯 نقاط الضعف</button>
+    <button class="coach-quick" onclick="askCoach('هل أنا مفرط في التدريب؟')">😴 Overtraining؟</button>
+    <button class="coach-quick" onclick="askCoach('مقارنة PRs بتاعتي بمتوسط المستوى')">🏆 تقييم PRs</button>
+  </div>
+
+  <div class="coach-input-row">
+    <input class="coach-input" id="coach-input" type="text"
+      placeholder="اسأل كوتشك..."
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendCoachMsg()}">
+    <button class="coach-send" onclick="sendCoachMsg()">
+      <svg viewBox="0 0 24 24"><path d="M2 12L22 2 12 22 10 13 2 12z"/></svg>
+    </button>
+  </div>
+</div>
 
 <!-- ===== FIRST TIME SETUP SCREEN ===== -->
 <div id="first-time-screen">
@@ -4256,6 +4461,106 @@ function installPWA() {
 window.addEventListener('appinstalled', () => {
   document.getElementById('pwa-install-bar').style.display = 'none';
 });
+
+// ============================================================
+// AI COACH
+// ============================================================
+const COACH_FN_URL = 'https://hukkzltmouigzsnqruxp.supabase.co/functions/v1/ai-coach';
+let coachHistory = [];
+
+function openCoach() {
+  document.getElementById('coach-screen').classList.add('open');
+  if (coachHistory.length === 0) {
+    // رسالة ترحيب أوتوماتيك
+    const gym = activeGym();
+    const lastWorkout = state.log[state.log.length - 1];
+    let welcome = `أهلاً! أنا كوتش تمرينتي 💪\n\nشايف إنك في **${gym?.name || 'الجيم'}**`;
+    if (lastWorkout) {
+      welcome += ` وآخر تمرينك كان **${lastWorkout.date}**.`;
+    } else {
+      welcome += `. لسه ماسجلتش تمارين — ابدأ وأنا أتابع تقدمك!`;
+    }
+    welcome += `\n\nاسألني عن أدائك أو اضغط على أي سؤال من تحت.`;
+    addCoachMsg('ai', welcome);
+  }
+}
+
+function closeCoach() {
+  document.getElementById('coach-screen').classList.remove('open');
+}
+
+function addCoachMsg(type, text) {
+  const container = document.getElementById('coach-messages');
+  const msg = document.createElement('div');
+  msg.className = `coach-msg ${type}`;
+  // Render **bold** markdown
+  msg.innerHTML = text.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--text)">$1</strong>').replace(/\n/g, '<br>');
+  container.appendChild(msg);
+  container.scrollTop = container.scrollHeight;
+  coachHistory.push({ type, text });
+  return msg;
+}
+
+function addTypingIndicator() {
+  const container = document.getElementById('coach-messages');
+  const msg = document.createElement('div');
+  msg.className = 'coach-msg typing';
+  msg.id = 'coach-typing';
+  msg.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
+  container.appendChild(msg);
+  container.scrollTop = container.scrollHeight;
+  return msg;
+}
+
+function removeTypingIndicator() {
+  const t = document.getElementById('coach-typing');
+  if (t) t.remove();
+}
+
+async function askCoach(question) {
+  sendCoachMsg(question);
+}
+
+async function sendCoachMsg(overrideQuestion) {
+  const input = document.getElementById('coach-input');
+  const question = overrideQuestion || input.value.trim();
+  if (!question) return;
+
+  input.value = '';
+  addCoachMsg('user', question);
+  const typing = addTypingIndicator();
+
+  try {
+    // جمع بيانات المستخدم
+    const gym = activeGym();
+    const todayWorkout = activeWorkout || state.log[state.log.length - 1] || null;
+
+    const res = await fetch(COACH_FN_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        activeGymName: gym?.name || '',
+        log:          state.log || [],
+        prs:          state.prs || {},
+        bodyWeights:  state.bodyWeights || [],
+        todayWorkout: todayWorkout,
+        question:     question
+      })
+    });
+
+    const data = await res.json();
+    removeTypingIndicator();
+
+    if (data.reply) {
+      addCoachMsg('ai', data.reply);
+    } else {
+      addCoachMsg('ai', '⚠️ حصل خطأ — جرب تاني');
+    }
+  } catch (e) {
+    removeTypingIndicator();
+    addCoachMsg('ai', '⚠️ مش قادر أتصل بالسيرفر — اتأكد من الإنترنت');
+  }
+}
 
 // ── First time gym setup ──
 let firstGymColor = '#2979FF';
