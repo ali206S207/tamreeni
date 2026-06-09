@@ -1963,34 +1963,73 @@ body::before {
   // Register service worker inline via blob
   if ('serviceWorker' in navigator) {
     const swCode = `
-const CACHE = 'trainer-v3';
-let restTimer = null;
+const CACHE = 'tamreeni-v1';
+const APP_VERSION = '1.0.0';
 
-self.addEventListener('install', e => { self.skipWaiting(); });
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
-  self.clients.claim();
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll([]))
+  );
 });
+
+self.addEventListener('activate', e => {
+  // حذف كل الـ caches القديمة
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
 self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).catch(() => new Response('offline'))));
+  // Navigation requests (الصفحة نفسها) — Network First دايماً
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        // حفظ النسخة الجديدة في الـ cache
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // باقي الملفات — Network First مع Cache fallback
+  e.respondWith(
+    fetch(e.request).then(res => {
+      if (res.ok) {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+      }
+      return res;
+    }).catch(() => caches.match(e.request))
+  );
 });
 
 self.addEventListener('message', e => {
   if (!e.data) return;
 
+  // Check for updates
+  if (e.data.type === 'CHECK_UPDATE') {
+    self.registration.update();
+  }
+
+  if (e.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+
   if (e.data.type === 'START_REST') {
-    // Cancel any existing timer
     if (restTimer) { clearTimeout(restTimer); restTimer = null; }
     const ms = e.data.seconds * 1000;
     const icon = e.data.icon || '';
     restTimer = setTimeout(() => {
       restTimer = null;
-      // Notify all clients to update UI
       self.clients.matchAll().then(clients => {
         clients.forEach(c => c.postMessage({ type: 'REST_DONE' }));
       });
-      // Show notification (works even if app is in background)
-      self.registration.showNotification('TRAINER PRO 💪', {
+      self.registration.showNotification('تمرينتي 💪', {
         body: 'انتهى وقت الراحة — ابدأ السيت الجديد!',
         icon,
         badge: icon,
@@ -2009,9 +2048,11 @@ self.addEventListener('message', e => {
   }
 
   if (e.data.type === 'CACHE_PAGE') {
-    e.waitUntil(caches.open(CACHE).then(c => c.add(e.data.url)));
+    caches.open(CACHE).then(c => c.add(e.data.url));
   }
 });
+
+let restTimer = null;
 
 self.addEventListener('notificationclick', e => {
   e.notification.close();
@@ -2023,7 +2064,28 @@ self.addEventListener('notificationclick', e => {
 `;
     const swBlob = new Blob([swCode], {type:'application/javascript'});
     const swUrl = URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swUrl, {scope: './'}).then(reg => { _swReg = reg; reg.active && reg.active.postMessage({type:'CACHE_PAGE',url:location.href}); requestNotifPermission(); }). catch(()=>{});
+    navigator.serviceWorker.register(swUrl, {scope: './'}).then(reg => {
+      _swReg = reg;
+
+      // لما يلاقي service worker جديد — يعرض notification للتحديث
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+          }
+        });
+      });
+
+      reg.active && reg.active.postMessage({type:'CACHE_PAGE', url: location.href});
+      requestNotifPermission();
+    }).catch(()=>{});
+
+    // لو اتغير الـ controller (يعني تحديث اتطبق) — reload
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) { refreshing = true; location.reload(); }
+    });
   }
 })();
 </script>
@@ -2222,6 +2284,15 @@ self.addEventListener('notificationclick', e => {
   </nav>
 
 </div><!-- end #app -->
+
+<!-- ===== UPDATE BANNER ===== -->
+<div id="update-banner" style="display:none;position:fixed;bottom:80px;left:12px;right:12px;z-index:9998;background:var(--bg2);border:1px solid var(--gold);border-radius:14px;padding:14px 16px;display:none;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 0 20px var(--glow)">
+  <div>
+    <div style="font-family:var(--font-mono);font-size:12px;color:var(--gold);letter-spacing:1px">⚡ تحديث جديد</div>
+    <div style="font-family:var(--font-main);font-size:12px;color:var(--text-dim);margin-top:2px">نسخة جديدة من تمرينتي جاهزة</div>
+  </div>
+  <button onclick="applyUpdate()" style="background:var(--gold);border:none;border-radius:8px;color:#fff;font-family:var(--font-mono);font-size:12px;font-weight:700;padding:8px 14px;cursor:pointer;white-space:nowrap;box-shadow:0 0 10px var(--glow)">تحديث ↻</button>
+</div>
 
 <!-- ===== AI COACH SCREEN ===== -->
 <div class="coach-screen" id="coach-screen">
@@ -4461,6 +4532,26 @@ window.addEventListener('appinstalled', () => {
   document.getElementById('pwa-install-bar').style.display = 'none';
 });
 
+// ── Auto Update ──
+function showUpdateBanner() {
+  const banner = document.getElementById('update-banner');
+  if (banner) banner.style.display = 'flex';
+}
+
+function applyUpdate() {
+  if (_swReg && _swReg.waiting) {
+    _swReg.waiting.postMessage({ type: 'SKIP_WAITING' });
+  } else {
+    location.reload();
+  }
+}
+
+// Check for updates كل 30 دقيقة
+setInterval(() => {
+  if (_swReg) _swReg.update();
+}, 30 * 60 * 1000);
+
+// ── AI COACH ──
 // ============================================================
 // AI COACH
 // ============================================================
