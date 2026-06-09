@@ -4781,8 +4781,10 @@ function selectProgDays(n, el) {
 }
 
 function openAddProgramModal() {
-  if (!isPro) {
-    document.getElementById('paywall-msg').textContent = 'إنشاء البرامج التدريبية الخاصة متاح لمستخدمي Pro فقط';
+  const programs = state.programs || [];
+  // Free = نظام واحد بس
+  if (!isPro && programs.length >= 1) {
+    document.getElementById('paywall-msg').textContent = 'النسخة المجانية تسمح بنظام تدريبي واحد فقط — اشترك Pro لأنظمة غير محدودة';
     document.getElementById('paywall-modal').classList.add('open');
     return;
   }
@@ -4798,13 +4800,19 @@ function saveProgram() {
   const desc = document.getElementById('prog-desc').value.trim();
   if (!name) { showToast('اكتب اسم البرنامج'); return; }
   if (!state.programs) state.programs = [];
+  // Double check limit
+  if (!isPro && state.programs.length >= 1) {
+    showToast('⚠️ النسخة المجانية: نظام واحد بس');
+    closeModal('add-program-modal');
+    return;
+  }
   state.programs.push({
     id: 'prog_' + Date.now(),
     name,
     desc,
     days: selectedProgDays,
     created: dateStr(new Date()),
-    schedule: {} // هيتملى لاحقاً
+    schedule: {}
   });
   saveState();
   closeModal('add-program-modal');
@@ -4817,28 +4825,25 @@ function renderPrograms() {
   if (!list) return;
   const programs = state.programs || [];
 
-  if (!isPro && !programs.length) {
-    list.innerHTML = `
-      <div class="paywall-card">
-        <div style="font-size:36px;margin-bottom:12px">📋</div>
-        <div class="paywall-title">برامج تدريبية مخصصة</div>
-        <div style="font-family:var(--font-condensed);font-size:13px;color:var(--text-muted);line-height:1.7;margin-bottom:16px">
-          ابني برنامجك الخاص — اختار التمارين والأيام والراحة<br>
-          وبدّل بين برامج مختلفة في أي وقت
-        </div>
-        <button class="btn btn-gold btn-full" style="font-family:var(--font-display);font-size:14px;padding:14px;letter-spacing:1px" onclick="document.getElementById('code-screen').classList.add('open')">
-          🔑 أدخل كود Pro
-        </button>
-      </div>`;
-    return;
+  // زر الإضافة — اخفيه لو Free ووصل للحد
+  const addBtn = document.querySelector('#page-programs .btn-gold');
+  if (addBtn) {
+    if (!isPro && programs.length >= 1) {
+      addBtn.style.opacity = '0.4';
+      addBtn.title = 'Pro فقط — نظام واحد مجاني';
+    } else {
+      addBtn.style.opacity = '1';
+      addBtn.title = '';
+    }
   }
 
   if (!programs.length) {
-    list.innerHTML = `<div class="empty-state">
-      <span class="empty-state-icon">📋</span>
-      <div class="empty-state-title">مفيش برامج لسه</div>
-      <div class="empty-state-text">اضغط + جديد لتأسيس أول برنامجك</div>
-    </div>`;
+    list.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-state-icon">📋</span>
+        <div class="empty-state-title">مفيش برامج لسه</div>
+        <div class="empty-state-text">اضغط + جديد لتأسيس أول برنامجك</div>
+      </div>`;
     return;
   }
 
@@ -4853,6 +4858,20 @@ function renderPrograms() {
         <button onclick="deleteProgram('${p.id}')" style="background:rgba(224,48,48,0.1);border:1px solid rgba(224,48,48,0.3);color:var(--red);border-radius:8px;padding:6px 10px;font-size:11px;font-family:var(--font-condensed);font-weight:700;cursor:pointer;flex-shrink:0">حذف</button>
       </div>
     </div>`).join('');
+
+  // لو Free ووصل للحد — بيّن card الترقية
+  if (!isPro && programs.length >= 1) {
+    list.innerHTML += `
+      <div class="paywall-card" style="margin-top:12px">
+        <div class="paywall-title" style="font-size:14px">🔒 نظام تاني؟</div>
+        <div style="font-family:var(--font-condensed);font-size:12px;color:var(--text-muted);margin:8px 0">
+          الـ Free بيسمح بنظام واحد — اشترك Pro لأنظمة غير محدودة
+        </div>
+        <button class="btn btn-gold btn-full" style="font-size:13px;padding:10px" onclick="document.getElementById('code-screen').classList.add('open')">
+          🔑 أدخل كود Pro
+        </button>
+      </div>`;
+  }
 }
 
 function deleteProgram(id) {
