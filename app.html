@@ -2406,19 +2406,22 @@ self.addEventListener('notificationclick', e => {
 
 <!-- ===== ADD PROGRAM MODAL ===== -->
 <div class="modal-overlay" id="add-program-modal" style="align-items:flex-end">
-  <div class="modal-sheet" style="max-height:85vh;overflow-y:auto">
+  <div class="modal-sheet" style="max-height:90vh;overflow-y:auto">
     <div class="modal-handle"></div>
     <div class="modal-title">📋 برنامج جديد</div>
-    <div style="margin-bottom:10px">
-      <div style="font-family:var(--font-condensed);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">اسم البرنامج</div>
+
+    <div style="margin-bottom:12px">
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">// اسم البرنامج</div>
       <input type="text" id="prog-name" class="search-input" style="margin-bottom:0" placeholder="مثال: PPL للمبتدئين">
     </div>
-    <div style="margin-bottom:10px">
-      <div style="font-family:var(--font-condensed);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">الوصف</div>
-      <input type="text" id="prog-desc" class="search-input" style="margin-bottom:0" placeholder="مثال: 6 أيام في الأسبوع، Push Pull Legs">
+
+    <div style="margin-bottom:12px">
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:6px">// الوصف (اختياري)</div>
+      <input type="text" id="prog-desc" class="search-input" style="margin-bottom:0" placeholder="مثال: 6 أيام في الأسبوع">
     </div>
-    <div style="margin-bottom:16px">
-      <div style="font-family:var(--font-condensed);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">عدد الأيام في الأسبوع</div>
+
+    <div style="margin-bottom:14px">
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">// اختار هيكل الأيام</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap" id="prog-days-picker">
         <div class="modal-option" style="padding:10px 20px;flex:1;text-align:center" onclick="selectProgDays(3,this)">3 أيام</div>
         <div class="modal-option" style="padding:10px 20px;flex:1;text-align:center" onclick="selectProgDays(4,this)">4 أيام</div>
@@ -2426,8 +2429,15 @@ self.addEventListener('notificationclick', e => {
         <div class="modal-option" style="padding:10px 20px;flex:1;text-align:center" onclick="selectProgDays(6,this)">6 أيام</div>
       </div>
     </div>
+
+    <!-- أسماء الأيام — بتظهر بعد اختيار العدد -->
+    <div id="prog-day-names" style="margin-bottom:14px;display:none">
+      <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-bottom:8px">// أسماء الأيام</div>
+      <div id="prog-day-names-inputs" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+
     <div style="display:flex;gap:8px">
-      <button class="btn btn-gold btn-full" style="font-family:var(--font-display);font-size:15px;padding:14px" onclick="saveProgram()">حفظ البرنامج ✓</button>
+      <button class="btn btn-gold btn-full" style="font-family:var(--font-mono);font-size:13px;padding:14px;letter-spacing:1px" onclick="saveProgram()">حفظ ✓</button>
       <button class="btn btn-outline" style="padding:14px 16px" onclick="closeModal('add-program-modal')">إلغاء</button>
     </div>
   </div>
@@ -4869,11 +4879,27 @@ function selectProgDays(n, el) {
   selectedProgDays = n;
   document.querySelectorAll('#prog-days-picker .modal-option').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
+  // بيّن inputs أسماء الأيام
+  const wrap = document.getElementById('prog-day-names');
+  const inputs = document.getElementById('prog-day-names-inputs');
+  if (!wrap || !inputs) return;
+  wrap.style.display = 'block';
+  const defaults = {
+    3: ['يوم A', 'يوم B', 'يوم C'],
+    4: ['Upper A', 'Lower A', 'Upper B', 'Lower B'],
+    5: ['Push', 'Pull', 'Legs', 'Upper', 'Lower'],
+    6: ['Push A', 'Pull A', 'Legs A', 'Push B', 'Pull B', 'Legs B'],
+  };
+  const names = defaults[n] || Array.from({length: n}, (_, i) => `يوم ${i+1}`);
+  inputs.innerHTML = names.map((name, i) => `
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);width:24px;text-align:center">${i+1}</div>
+      <input type="text" id="prog-day-${i}" class="search-input" style="margin-bottom:0;flex:1" value="${name}" placeholder="اسم اليوم">
+    </div>`).join('');
 }
 
 function openAddProgramModal() {
   const programs = state.programs || [];
-  // Free = نظام واحد بس
   if (!isPro && programs.length >= 1) {
     document.getElementById('paywall-msg').textContent = 'النسخة المجانية تسمح بنظام تدريبي واحد فقط — اشترك Pro لأنظمة غير محدودة';
     document.getElementById('paywall-modal').classList.add('open');
@@ -4881,6 +4907,8 @@ function openAddProgramModal() {
   }
   document.getElementById('prog-name').value = '';
   document.getElementById('prog-desc').value = '';
+  const wrap = document.getElementById('prog-day-names');
+  if (wrap) wrap.style.display = 'none';
   selectedProgDays = 4;
   document.querySelectorAll('#prog-days-picker .modal-option').forEach(e => e.classList.remove('selected'));
   document.getElementById('add-program-modal').classList.add('open');
@@ -4890,8 +4918,13 @@ function saveProgram() {
   const name = document.getElementById('prog-name').value.trim();
   const desc = document.getElementById('prog-desc').value.trim();
   if (!name) { showToast('اكتب اسم البرنامج'); return; }
+  if (!selectedProgDays) { showToast('اختار عدد الأيام'); return; }
+  const dayNames = [];
+  for (let i = 0; i < selectedProgDays; i++) {
+    const inp = document.getElementById(`prog-day-${i}`);
+    dayNames.push(inp ? inp.value.trim() || `يوم ${i+1}` : `يوم ${i+1}`);
+  }
   if (!state.programs) state.programs = [];
-  // Double check limit
   if (!isPro && state.programs.length >= 1) {
     showToast('⚠️ النسخة المجانية: نظام واحد بس');
     closeModal('add-program-modal');
@@ -4899,11 +4932,11 @@ function saveProgram() {
   }
   state.programs.push({
     id: 'prog_' + Date.now(),
-    name,
-    desc,
+    name, desc,
     days: selectedProgDays,
+    dayNames,
     created: dateStr(new Date()),
-    schedule: {}
+    active: false
   });
   saveState();
   closeModal('add-program-modal');
@@ -4911,22 +4944,42 @@ function saveProgram() {
   showToast('✓ تم حفظ البرنامج — ' + name);
 }
 
+function applyProgram(progId) {
+  const prog = (state.programs || []).find(p => p.id === progId);
+  if (!prog) return;
+  if (!confirm(`تطبيق برنامج "${prog.name}"؟\nده هيغير جدول التمارين الحالي.`)) return;
+  const dayNames = prog.dayNames || Array.from({length: prog.days}, (_, i) => `يوم ${i+1}`);
+  state.schedule = buildScheduleFromDays(dayNames);
+  state.programs.forEach(p => p.active = p.id === progId);
+  saveState();
+  showToast(`✓ تم تطبيق "${prog.name}" — اضيف تمارينك من التمارين`);
+  renderPrograms();
+  navigate('workout');
+}
+
+function buildScheduleFromDays(dayNames) {
+  const total = dayNames.length;
+  const perTab = Math.ceil(total / 3);
+  const tabs = ['push', 'pull', 'legs'];
+  const schedule = {};
+  let idx = 0;
+  tabs.forEach((tab, ti) => {
+    schedule[tab] = [];
+    const count = ti < 2 ? perTab : Math.max(1, total - perTab * 2);
+    for (let i = 0; i < count && idx < total; i++) {
+      schedule[tab].push({ day: dayNames[idx++], exercises: [] });
+    }
+    if (!schedule[tab].length) schedule[tab].push({ day: tab, exercises: [] });
+  });
+  return schedule;
+}
+
 function renderPrograms() {
   const list = document.getElementById('programs-list');
   if (!list) return;
   const programs = state.programs || [];
-
-  // زر الإضافة — اخفيه لو Free ووصل للحد
   const addBtn = document.querySelector('#page-programs .btn-gold');
-  if (addBtn) {
-    if (!isPro && programs.length >= 1) {
-      addBtn.style.opacity = '0.4';
-      addBtn.title = 'Pro فقط — نظام واحد مجاني';
-    } else {
-      addBtn.style.opacity = '1';
-      addBtn.title = '';
-    }
-  }
+  if (addBtn) addBtn.style.opacity = (!isPro && programs.length >= 1) ? '0.4' : '1';
 
   if (!programs.length) {
     list.innerHTML = `
@@ -4939,35 +4992,42 @@ function renderPrograms() {
   }
 
   list.innerHTML = programs.slice().reverse().map(p => `
-    <div class="program-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+    <div class="program-card" style="${p.active ? 'border-color:var(--gold);box-shadow:0 0 12px var(--glow)' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div>
-          <div class="program-card-title">${p.name}</div>
+          <div class="program-card-title" style="${p.active ? 'color:var(--gold)' : ''}">${p.active ? '⚡ ' : ''}${p.name}</div>
           <div class="program-card-meta">${p.desc || ''}</div>
           <div class="program-card-meta" style="margin-top:4px;color:var(--gold)">${p.days} أيام/أسبوع · ${p.created}</div>
         </div>
-        <button onclick="deleteProgram('${p.id}')" style="background:rgba(224,48,48,0.1);border:1px solid rgba(224,48,48,0.3);color:var(--red);border-radius:8px;padding:6px 10px;font-size:11px;font-family:var(--font-condensed);font-weight:700;cursor:pointer;flex-shrink:0">حذف</button>
+        <button onclick="deleteProgram('${p.id}')" style="background:rgba(224,48,48,0.1);border:1px solid rgba(224,48,48,0.3);color:var(--red);border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;flex-shrink:0">حذف</button>
       </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">
+        ${(p.dayNames||[]).map(d => `<span style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">${d}</span>`).join('')}
+      </div>
+      ${p.active
+        ? `<div style="font-family:var(--font-mono);font-size:10px;color:var(--gold);letter-spacing:1px">// النظام الحالي النشط ✓</div>`
+        : `<button onclick="applyProgram('${p.id}')" class="btn btn-gold btn-full" style="font-family:var(--font-mono);font-size:12px;padding:10px;letter-spacing:1px">تطبيق هذا البرنامج ⚡</button>`
+      }
     </div>`).join('');
 
-  // لو Free ووصل للحد — بيّن card الترقية
   if (!isPro && programs.length >= 1) {
     list.innerHTML += `
       <div class="paywall-card" style="margin-top:12px">
         <div class="paywall-title" style="font-size:14px">🔒 نظام تاني؟</div>
-        <div style="font-family:var(--font-condensed);font-size:12px;color:var(--text-muted);margin:8px 0">
-          الـ Free بيسمح بنظام واحد — اشترك Pro لأنظمة غير محدودة
-        </div>
-        <button class="btn btn-gold btn-full" style="font-size:13px;padding:10px" onclick="document.getElementById('code-screen').classList.add('open')">
-          🔑 أدخل كود Pro
-        </button>
+        <div style="font-family:var(--font-condensed);font-size:12px;color:var(--text-muted);margin:8px 0">اشترك Pro لأنظمة غير محدودة</div>
+        <button class="btn btn-gold btn-full" style="font-size:13px;padding:10px" onclick="document.getElementById('code-screen').classList.add('open')">🔑 أدخل كود Pro</button>
       </div>`;
   }
 }
 
 function deleteProgram(id) {
+  const prog = (state.programs||[]).find(p => p.id === id);
   if (!confirm('هل تريد حذف هذا البرنامج؟')) return;
-  state.programs = (state.programs || []).filter(p => p.id !== id);
+  if (prog?.active) {
+    state.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+    showToast('رجع للـ PPL الافتراضي');
+  }
+  state.programs = (state.programs||[]).filter(p => p.id !== id);
   saveState();
   renderPrograms();
 }
