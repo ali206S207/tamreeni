@@ -3030,7 +3030,13 @@ function renderPPL() {
     return `
     <div class="workout-day-card">
       <div class="workout-day-header">
-        <div class="workout-day-title">${day.day}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <div class="workout-day-title" id="day-title-${currentPPL}-${di}">${day.day}</div>
+          <button onclick="editDayName('${currentPPL}',${di})" 
+            style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:3px 7px;cursor:pointer;color:var(--text-muted);font-size:10px;font-family:var(--font-mono);transition:all .2s"
+            onmouseover="this.style.borderColor='var(--gold)';this.style.color='var(--gold)'"
+            onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)'">✎</button>
+        </div>
         <div style="display:flex;gap:8px;align-items:center">
           <span class="day-badge">${exercises.length} تمرين</span>
           <button class="btn btn-gold" style="padding:6px 14px;font-size:12px" onclick="startWorkout('${currentPPL}',${di})">▶ ابدأ</button>
@@ -3052,6 +3058,33 @@ function renderPPL() {
       </div>
     </div>`;
   }).join('');
+}
+
+function editDayName(ppl, di) {
+  const current = state.schedule[ppl][di].day;
+  const newName = prompt('اسم اليوم الجديد:', current);
+  if (!newName || !newName.trim() || newName.trim() === current) return;
+  state.schedule[ppl][di].day = newName.trim();
+  // لو البرنامج النشط — حدّث dayNames فيه
+  const activeProg = (state.programs || []).find(p => p.active);
+  if (activeProg) {
+    // حساب index الكلي للـ day
+    const tabs = ['push', 'pull', 'legs'];
+    let globalIdx = 0;
+    for (const tab of tabs) {
+      for (let i = 0; i < (state.schedule[tab] || []).length; i++) {
+        if (tab === ppl && i === di) {
+          if (activeProg.dayNames && activeProg.dayNames[globalIdx] !== undefined) {
+            activeProg.dayNames[globalIdx] = newName.trim();
+          }
+        }
+        globalIdx++;
+      }
+    }
+  }
+  saveState();
+  renderPPL();
+  showToast(`✓ اتغير لـ "${newName.trim()}"`);
 }
 
 function removeExercise(ppl, di, exId) {
