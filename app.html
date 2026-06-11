@@ -3015,8 +3015,8 @@ function renderDash() {
 // ============================================================
 function switchPPL(type) {
   currentPPL = type;
-  document.querySelectorAll('.ppl-tab').forEach((t,i) => {
-    t.classList.toggle('active', ['push','pull','legs'][i] === type);
+  document.querySelectorAll('.ppl-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.ppl === type);
   });
   renderPPL();
 }
@@ -3024,6 +3024,30 @@ function switchPPL(type) {
 function renderPPL() {
   const container = document.getElementById('ppl-content');
   const days = state.schedule[currentPPL];
+  if (!days) return;
+
+  // حدّث الـ tabs ديناميكياً من الـ schedule
+  const tabsContainer = document.getElementById('ppl-tabs');
+  if (tabsContainer) {
+    const tabs = Object.keys(state.schedule);
+    // استخرج اسم الـ tab من أول يوم فيه لو مش PPL افتراضي
+    const defaultLabels = { push: 'PUSH', pull: 'PULL', legs: 'LEGS' };
+    const activeProg = (state.programs || []).find(p => p.active);
+    tabsContainer.innerHTML = tabs.map(tab => {
+      let label = defaultLabels[tab] || tab.toUpperCase();
+      // لو في برنامج نشط وعنده dayNames — استخدم أول يوم كاسم للـ tab
+      if (activeProg && state.schedule[tab]?.length) {
+        const firstDay = state.schedule[tab][0]?.day;
+        if (firstDay && !defaultLabels[tab]) label = firstDay;
+        else if (firstDay && activeProg) {
+          // اختصر الاسم لـ 8 حروف
+          label = firstDay.length > 8 ? firstDay.substring(0, 8) + '…' : firstDay;
+        }
+      }
+      const isActive = tab === currentPPL;
+      return `<button class="ppl-tab ${isActive ? 'active' : ''}" data-ppl="${tab}" onclick="switchPPL('${tab}')">${label}</button>`;
+    }).join('');
+  }
   
   container.innerHTML = days.map((day, di) => {
     const exercises = day.exercises.map(id => EXERCISES_DB.find(e => e.id === id)).filter(Boolean);
@@ -4984,8 +5008,10 @@ function applyProgram(progId) {
   const dayNames = prog.dayNames || Array.from({length: prog.days}, (_, i) => `يوم ${i+1}`);
   state.schedule = buildScheduleFromDays(dayNames);
   state.programs.forEach(p => p.active = p.id === progId);
+  // رجّع الـ tab للأول
+  currentPPL = Object.keys(state.schedule)[0];
   saveState();
-  showToast(`✓ تم تطبيق "${prog.name}" — اضيف تمارينك من التمارين`);
+  showToast(`✓ تم تطبيق "${prog.name}" — اضيف تمارينك`);
   renderPrograms();
   navigate('workout');
 }
