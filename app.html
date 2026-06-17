@@ -545,117 +545,230 @@ body::before {
   background: var(--bg);
   z-index: 1000;
   overflow-y: auto;
-  padding: 16px;
-  padding-bottom: 100px;
+  padding: 0;
+  padding-bottom: 120px;
+  background-image:
+    linear-gradient(rgba(41,121,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(41,121,255,0.03) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 #active-workout.open { display: block; }
 
-.workout-timer-display {
-  text-align: center;
-  margin: 12px 0 4px;
-  font-family: var(--font-display);
-  font-size: 52px;
+/* ── WORKOUT HEADER ── */
+.workout-header-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(4,7,15,0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.workout-header-info { flex: 1; min-width: 0; }
+
+.workout-header-title {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+  text-shadow: 0 0 8px var(--glow);
+}
+
+.workout-header-day {
+  font-family: var(--font-main);
+  font-size: 16px;
   font-weight: 700;
   color: var(--text);
-  letter-spacing: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── TIMER HERO ── */
+.workout-timer-hero {
+  padding: 24px 16px 16px;
+  text-align: center;
+  position: relative;
+}
+
+.workout-timer-display {
+  font-family: var(--font-mono);
+  font-size: 64px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 4px;
   line-height: 1;
+  text-shadow: 0 0 30px rgba(41,121,255,0.4), 0 0 60px rgba(41,121,255,0.15);
+  animation: timer-pulse 2s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+  0%,100% { text-shadow: 0 0 30px rgba(41,121,255,0.4), 0 0 60px rgba(41,121,255,0.15); }
+  50% { text-shadow: 0 0 40px rgba(41,121,255,0.6), 0 0 80px rgba(41,121,255,0.25); }
 }
 
 .workout-timer-label {
-  font-family: var(--font-condensed);
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: 10px;
   color: var(--text-muted);
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   text-transform: uppercase;
-  text-align: center;
-  margin-top: 4px;
+  margin-top: 6px;
 }
 
-.active-exercise-card {
+/* ── SETS STATS BAR ── */
+.workout-stats-bar {
+  display: flex;
+  gap: 0;
+  margin: 0 16px 16px;
   background: var(--bg2);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-bottom: 12px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
+.workout-stat-item {
+  flex: 1;
+  padding: 10px;
+  text-align: center;
+  border-left: 1px solid var(--border);
+}
+
+.workout-stat-item:last-child { border-left: none; }
+
+.workout-stat-num {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+  text-shadow: 0 0 10px var(--glow);
+  line-height: 1;
+}
+
+.workout-stat-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+  margin-top: 3px;
+}
+
+/* ── EXERCISE CARDS ── */
+.active-exercise-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin: 0 12px 12px;
+  overflow: hidden;
+  transition: border-color .3s;
+}
+
+.active-exercise-card:has(.set-done-btn.done:last-of-type) {
+  border-color: rgba(41,121,255,0.4);
+}
+
 .active-exercise-header {
-  padding: 12px 16px;
+  padding: 14px 16px;
   background: var(--bg3);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.active-exercise-header::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold), var(--gold2), transparent);
+  box-shadow: 0 0 10px var(--glow);
 }
 
 .active-ex-name {
-  font-family: var(--font-condensed);
-  font-size: 16px;
+  font-family: var(--font-main);
+  font-size: 15px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+  color: var(--text);
 }
 
 .active-ex-muscle {
-  font-size: 11px;
+  font-family: var(--font-mono);
+  font-size: 10px;
   color: var(--gold);
-  font-family: var(--font-condensed);
-  text-transform: uppercase;
   letter-spacing: 1px;
+  text-shadow: 0 0 6px var(--glow);
 }
 
+/* ── SETS TABLE ── */
 .sets-table {
   width: 100%;
   border-collapse: collapse;
 }
 
 .sets-table th {
-  font-family: var(--font-condensed);
-  font-size: 10px;
-  letter-spacing: 1px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 2px;
   text-transform: uppercase;
   color: var(--text-muted);
-  padding: 8px 10px 6px;
+  padding: 10px 8px 8px;
   text-align: center;
   border-bottom: 1px solid var(--border);
 }
 
 .sets-table td {
-  padding: 6px 4px;
+  padding: 8px 4px;
   text-align: center;
   vertical-align: middle;
 }
 
 .sets-table tbody tr {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(41,121,255,0.06);
   transition: background .15s;
 }
 
 .sets-table tbody tr:last-child { border-bottom: none; }
-.sets-table tbody tr:active { background: rgba(41,121,255,0.05); }
+.sets-table tbody tr.set-completed { background: rgba(41,121,255,0.05); }
 
 .set-input {
-  width: 64px;
+  width: 68px;
   background: var(--bg3);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--text);
-  font-family: var(--font-display);
-  font-size: 18px;
+  font-family: var(--font-mono);
+  font-size: 20px;
   font-weight: 700;
   text-align: center;
   padding: 8px 4px;
   -moz-appearance: textfield;
+  transition: border-color .2s, box-shadow .2s;
 }
 
 .set-input::-webkit-outer-spin-button,
 .set-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-.set-input:focus { border-color: var(--gold); outline: none; }
+
+.set-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px var(--glow);
+  outline: none;
+}
 
 .set-done-btn {
-  width: 40px;
-  height: 40px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
   border: 2px solid var(--border);
   background: none;
@@ -664,22 +777,43 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all .15s;
+  transition: all .2s;
   margin: 0 auto;
   font-size: 18px;
+  position: relative;
 }
 
-.set-done-btn:active { transform: scale(0.88); }
+.set-done-btn::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  transition: all .3s;
+}
 
 .set-done-btn.done {
   background: var(--green);
   border-color: var(--green);
   color: #000;
+  box-shadow: 0 0 16px rgba(0,230,118,0.4);
 }
 
+.set-done-btn.done::after {
+  border-color: rgba(0,230,118,0.3);
+  animation: done-ring .4s ease-out forwards;
+}
+
+@keyframes done-ring {
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(1.5); opacity: 0; }
+}
+
+.set-done-btn:active { transform: scale(0.88); }
+
 .set-num {
-  font-family: var(--font-display);
-  font-size: 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
   color: var(--text-muted);
   width: 24px;
   text-align: center;
@@ -690,120 +824,221 @@ body::before {
   border-top: 1px solid var(--border);
 }
 
-/* ===== REST TIMER MODAL ===== */
+/* ── BETWEEN SET TIMER ── */
+.between-set-timer {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: rgba(41,121,255,0.03);
+}
+
+.between-set-timer.active { display: flex; }
+
+.between-set-timer-bar-wrap {
+  flex: 1;
+  height: 4px;
+  background: var(--bg4);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.between-set-timer-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--gold), var(--gold2));
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--glow);
+  transition: width 1s linear;
+}
+
+.between-set-timer-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 32px;
+  text-align: left;
+}
+
+.between-set-timer.active .between-set-timer-label { color: var(--gold); }
+
+/* ── FINISH BUTTON ── */
+.finish-workout-btn {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: linear-gradient(135deg, var(--green), #00C853);
+  color: #000;
+  border: none;
+  padding: 18px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  cursor: pointer;
+  z-index: 20;
+  padding-bottom: max(18px, env(safe-area-inset-bottom));
+  box-shadow: 0 -4px 20px rgba(0,230,118,0.2);
+  transition: all .2s;
+}
+
+.finish-workout-btn:active { filter: brightness(0.9); }
+
+/* ===== REST TIMER MODAL — FULL REDESIGN ===== */
 #rest-modal {
   display: none;
   position: fixed;
   inset: 0;
-  background: #000;
+  background: rgba(4,7,15,0.97);
   z-index: 2000;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  gap: 0;
   overflow: hidden;
+  backdrop-filter: blur(20px);
+  background-image:
+    linear-gradient(rgba(41,121,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(41,121,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 #rest-modal.open { display: flex; }
 
+/* Corner brackets */
+#rest-modal::before, #rest-modal::after {
+  content: '';
+  position: absolute;
+  width: 60px; height: 60px;
+  border-color: rgba(41,121,255,0.3);
+  border-style: solid;
+}
+#rest-modal::before { top: 20px; right: 20px; border-width: 2px 0 0 2px; }
+#rest-modal::after  { bottom: 80px; left: 20px; border-width: 0 2px 2px 0; }
+
 .rest-top-label {
-  font-family: var(--font-display);
-  font-size: 12px;
-  letter-spacing: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 5px;
   color: var(--gold);
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
+  text-shadow: 0 0 10px var(--glow);
 }
 
 .rest-sub-label {
-  font-family: var(--font-condensed);
-  font-size: 13px;
+  font-family: var(--font-main);
+  font-size: 14px;
   color: var(--text-muted);
-  letter-spacing: 1px;
-  margin-bottom: 40px;
+  letter-spacing: 0.5px;
+  margin-bottom: 48px;
+  font-weight: 300;
 }
 
-.rest-main-row {
-  display: flex;
-  align-items: center;
-  gap: 32px;
+/* ── CIRCULAR TIMER ── */
+.rest-circle-wrap {
+  position: relative;
+  width: 240px;
+  height: 240px;
   margin-bottom: 48px;
 }
 
-.rest-bar-wrap {
-  width: 14px;
-  height: 220px;
-  background: #111;
-  border-radius: 7px;
-  position: relative;
-  overflow: hidden;
+.rest-circle-svg {
+  width: 240px;
+  height: 240px;
+  transform: rotate(-90deg);
 }
 
-.rest-bar-fill {
+.rest-circle-bg {
+  fill: none;
+  stroke: rgba(41,121,255,0.08);
+  stroke-width: 8;
+}
+
+.rest-circle-progress {
+  fill: none;
+  stroke: url(#restGradient);
+  stroke-width: 8;
+  stroke-linecap: round;
+  stroke-dasharray: 691.15;
+  stroke-dashoffset: 0;
+  filter: drop-shadow(0 0 8px rgba(41,121,255,0.6));
+  transition: stroke-dashoffset 1s linear;
+}
+
+.rest-circle-inner {
   position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 60%;
-  background: var(--gold);
-  border-radius: 7px;
-  transition: height 1s linear;
-  box-shadow: 0 0 16px var(--gold);
-}
-
-.rest-num-block {
+  inset: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
 }
 
 .rest-big-num {
-  font-family: var(--font-display);
-  font-size: 110px;
+  font-family: var(--font-mono);
+  font-size: 80px;
   font-weight: 700;
-  color: #fff;
+  color: var(--text);
   line-height: 1;
-  letter-spacing: -4px;
+  letter-spacing: -2px;
+  text-shadow: 0 0 30px rgba(41,121,255,0.5);
 }
 
 .rest-sec-label {
-  font-family: var(--font-condensed);
-  font-size: 16px;
+  font-family: var(--font-mono);
+  font-size: 12px;
   color: var(--text-muted);
-  letter-spacing: 4px;
+  letter-spacing: 3px;
   margin-top: 4px;
 }
 
+.rest-main-row { display: none; } /* مش محتاجها بعد الـ circle */
+
 .rest-btns {
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  gap: 16px;
+  align-items: center;
 }
 
 .rest-adjust-btn {
   background: var(--bg2);
   border: 1px solid var(--border);
   color: var(--text);
-  border-radius: 8px;
-  padding: 10px 16px;
-  font-family: var(--font-condensed);
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-family: var(--font-mono);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
+  transition: all .2s;
+  letter-spacing: 1px;
+}
+
+.rest-adjust-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  box-shadow: 0 0 10px var(--glow);
 }
 
 .rest-skip-btn {
   background: var(--gold);
   border: none;
-  color: #000;
-  border-radius: 8px;
-  padding: 10px 24px;
-  font-family: var(--font-display);
-  font-size: 15px;
+  color: #fff;
+  border-radius: 12px;
+  padding: 14px 32px;
+  font-family: var(--font-mono);
+  font-size: 14px;
   font-weight: 700;
+  letter-spacing: 2px;
   text-transform: uppercase;
   cursor: pointer;
+  box-shadow: 0 0 20px var(--glow);
+  transition: all .2s;
 }
+
+.rest-skip-btn:hover { filter: brightness(1.15); box-shadow: 0 0 30px var(--glow); }
 
 /* ===== LIBRARY ===== */
 .search-input {
@@ -2474,26 +2709,77 @@ self.addEventListener('notificationclick', e => {
 
 <!-- ACTIVE WORKOUT OVERLAY -->
 <div id="active-workout">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-    <div>
-      <div style="display:flex;align-items:center;gap:10px">
-  <img src="img-photo-strip-4.png" style="width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)">
-  <div id="aw-title" style="font-family:var(--font-display);font-size:20px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--gold)"></div>
-</div>
-      <div id="aw-day" style="font-family:var(--font-condensed);font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-top:2px"></div>
+  <!-- Sticky header -->
+  <div class="workout-header-bar">
+    <div class="workout-header-info">
+      <div class="workout-header-title" id="aw-title">// التمرين</div>
+      <div class="workout-header-day" id="aw-day"></div>
     </div>
-    <button onclick="stopWorkout()" style="background:rgba(224,48,48,0.15);border:1px solid rgba(224,48,48,0.3);color:var(--red);border-radius:8px;padding:8px 14px;font-family:var(--font-display);font-size:13px;font-weight:700;cursor:pointer;text-transform:uppercase">إيقاف</button>
+    <button onclick="stopWorkout()" style="background:rgba(224,48,48,0.12);border:1px solid rgba(224,48,48,0.3);color:var(--red);border-radius:10px;padding:10px 16px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px;white-space:nowrap">✕ إيقاف</button>
   </div>
 
-  <div class="workout-timer-display" id="aw-timer">00:00:00</div>
-  <div class="workout-timer-label">وقت التمرين</div>
+  <!-- Timer hero -->
+  <div class="workout-timer-hero">
+    <div class="workout-timer-display" id="aw-timer">00:00:00</div>
+    <div class="workout-timer-label">// مدة التمرين</div>
+  </div>
 
-  <div style="height:16px"></div>
+  <!-- Stats bar -->
+  <div class="workout-stats-bar" id="aw-stats-bar">
+    <div class="workout-stat-item">
+      <div class="workout-stat-num" id="aw-stat-sets">0</div>
+      <div class="workout-stat-label">سيت</div>
+    </div>
+    <div class="workout-stat-item">
+      <div class="workout-stat-num" id="aw-stat-vol">0</div>
+      <div class="workout-stat-label">كجم حجم</div>
+    </div>
+    <div class="workout-stat-item">
+      <div class="workout-stat-num" id="aw-stat-prs">0</div>
+      <div class="workout-stat-label">PR 🏆</div>
+    </div>
+  </div>
+
+  <!-- Exercises -->
   <div id="aw-exercises"></div>
 
-  <button class="btn btn-green btn-full" style="margin-top:16px;font-family:var(--font-display);font-size:18px;padding:16px;letter-spacing:2px" onclick="finishWorkout()">✓ إنهاء التمرين</button>
+  <!-- Finish button (fixed bottom) -->
+  <button class="finish-workout-btn" onclick="finishWorkout()">⚡ إنهاء التمرين</button>
 </div>
 
+<!-- REST TIMER MODAL -->
+<div id="rest-modal">
+  <!-- SVG gradient def -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <linearGradient id="restGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" style="stop-color:#2979FF"/>
+        <stop offset="100%" style="stop-color:#00B0FF"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div class="rest-top-label">// وقت_الراحة</div>
+  <div class="rest-sub-label">استرح — جسمك بيتعمر دلوقتي 💪</div>
+
+  <!-- Circular timer -->
+  <div class="rest-circle-wrap">
+    <svg class="rest-circle-svg" viewBox="0 0 240 240">
+      <circle class="rest-circle-bg" cx="120" cy="120" r="110"/>
+      <circle class="rest-circle-progress" id="rest-circle-progress" cx="120" cy="120" r="110"/>
+    </svg>
+    <div class="rest-circle-inner">
+      <div id="rest-time-text" class="rest-big-num">90</div>
+      <div class="rest-sec-label">ثانية</div>
+    </div>
+  </div>
+
+  <div class="rest-btns">
+    <button class="rest-adjust-btn" onclick="adjustRest(-15)">−15</button>
+    <button class="rest-skip-btn" onclick="skipRest()">تخطى ⚡</button>
+    <button class="rest-adjust-btn" onclick="adjustRest(+15)">+15</button>
+  </div>
+</div>
 
 <!-- CUSTOM NUMPAD -->
 <div id="custom-numpad">
@@ -2525,30 +2811,6 @@ self.addEventListener('notificationclick', e => {
     <button class="numpad-btn btn-red" onclick="numpadBackspace()">⌫</button>
     <button class="numpad-btn btn-confirm" onclick="confirmNumpad()">✓ تأكيد</button>
     <button class="numpad-btn btn-red" onclick="numpadClear()">C</button>
-  </div>
-</div>
-
-<!-- REST TIMER MODAL -->
-<div id="rest-modal">
-  <div class="rest-top-label">REST TIME</div>
-  <div class="rest-sub-label">استرح — الجسم بيتعمر دلوقتي</div>
-
-  <div class="rest-main-row">
-    <!-- Vertical bar -->
-    <div class="rest-bar-wrap">
-      <div class="rest-bar-fill" id="rest-bar-fill"></div>
-    </div>
-    <!-- Big number -->
-    <div class="rest-num-block">
-      <div id="rest-time-text" class="rest-big-num">90</div>
-      <div class="rest-sec-label">ثانية</div>
-    </div>
-  </div>
-
-  <div class="rest-btns">
-    <button class="rest-adjust-btn" onclick="adjustRest(-15)">−15s</button>
-    <button class="rest-skip-btn" onclick="skipRest()">تخطى</button>
-    <button class="rest-adjust-btn" onclick="adjustRest(15)">+15s</button>
   </div>
 </div>
 
@@ -3410,11 +3672,33 @@ function startWorkout(ppl, di) {
   saveState();
 
   document.getElementById('active-workout').classList.add('open');
-  document.getElementById('aw-title').textContent = day.day;
-  document.getElementById('aw-day').textContent = ppl.toUpperCase() + ' DAY';
+  document.getElementById('aw-title').textContent = '// ' + ppl.toUpperCase();
+  document.getElementById('aw-day').textContent = day.day;
   
   renderActiveExercises();
   startWorkoutTimer();
+  updateWorkoutStats();
+}
+
+function updateWorkoutStats() {
+  if (!activeWorkout) return;
+  let totalSets = 0, totalVol = 0, totalPRs = 0;
+  activeWorkout.exercises.forEach(ex => {
+    ex.sets.forEach(s => {
+      if (s.done) {
+        totalSets++;
+        totalVol += (parseFloat(s.weight)||0) * (parseInt(s.reps)||0);
+        const pr = state.prs[ex.id];
+        if (pr && parseFloat(s.weight) >= pr.weight) totalPRs++;
+      }
+    });
+  });
+  const sets = document.getElementById('aw-stat-sets');
+  const vol  = document.getElementById('aw-stat-vol');
+  const prs  = document.getElementById('aw-stat-prs');
+  if (sets) sets.textContent = totalSets;
+  if (vol)  vol.textContent  = totalVol > 0 ? (totalVol >= 1000 ? (totalVol/1000).toFixed(1)+'k' : totalVol) : '0';
+  if (prs)  prs.textContent  = totalPRs;
 }
 
 function renderActiveExercises() {
@@ -3520,6 +3804,7 @@ function toggleSetDone(ei, si) {
   }
 
   saveState();
+  updateWorkoutStats();
 
   // Update card in-place (no full re-render = animation preserved)
   const card = document.getElementById(`row-${ei}-${si}`);
@@ -3725,11 +4010,30 @@ function showRestTimer(seconds = 90) {
 
   sendToSW({ type: 'START_REST', seconds, icon: document.getElementById('apple-icon')?.href || '' });
 
-  // Show inline bar (not modal)
-  const bar = document.getElementById('inline-rest-bar');
-  if (bar) bar.style.display = 'block';
+  // Open the rest modal
+  document.getElementById('rest-modal').classList.add('open');
+  document.getElementById('rest-time-text').textContent = seconds;
+  updateRestCircle(seconds, seconds);
 
   _tickRest();
+}
+
+function updateRestCircle(remaining, total) {
+  const circle = document.getElementById('rest-circle-progress');
+  if (!circle) return;
+  const circumference = 2 * Math.PI * 110; // r=110
+  const pct = total > 0 ? remaining / total : 0;
+  const offset = circumference * (1 - pct);
+  circle.style.strokeDasharray = circumference;
+  circle.style.strokeDashoffset = offset;
+  // Color: blue → cyan as time runs out
+  if (pct < 0.3) {
+    circle.style.stroke = '#00B0FF';
+    circle.style.filter = 'drop-shadow(0 0 12px rgba(0,176,255,0.8))';
+  } else {
+    circle.style.stroke = 'url(#restGradient)';
+    circle.style.filter = 'drop-shadow(0 0 8px rgba(41,121,255,0.6))';
+  }
 }
 
 function _tickRest() {
@@ -3738,19 +4042,21 @@ function _tickRest() {
     if (!restEndTime) return;
     restRemaining = Math.max(0, Math.round((restEndTime - Date.now()) / 1000));
 
+    document.getElementById('rest-time-text').textContent = restRemaining;
+    updateRestCircle(restRemaining, restTotal);
+
+    // Also update inline bar if exists
     const inlineTime = document.getElementById('inline-rest-time');
     const inlineFill = document.getElementById('inline-rest-fill');
-    if (inlineTime) inlineTime.textContent = restRemaining;
     const pct = restTotal > 0 ? (restRemaining / restTotal) * 100 : 0;
+    if (inlineTime) inlineTime.textContent = restRemaining;
     if (inlineFill) inlineFill.style.width = pct + '%';
 
     if (restRemaining <= 0) {
       clearInterval(restTimerInterval);
       playRestEndBeep();
-      if (navigator.vibrate) navigator.vibrate([200, 80, 200]);
-      // hide inline bar
-      const bar = document.getElementById('inline-rest-bar');
-      if (bar) { bar.style.display = 'none'; }
+      if (navigator.vibrate) navigator.vibrate([200, 80, 200, 80, 200]);
+      setTimeout(() => skipRest(), 1500);
       restEndTime = null;
     }
   }, 500);
@@ -3776,10 +4082,10 @@ function adjustRest(delta) {
   restEndTime += delta * 1000;
   restTotal += delta;
   if (restEndTime < Date.now() + 5000) restEndTime = Date.now() + 5000;
-  // Update SW with new remaining time
   const newSecs = Math.round((restEndTime - Date.now()) / 1000);
   sendToSW({ type: 'START_REST', seconds: newSecs, icon: document.getElementById('apple-icon')?.href || '' });
   document.getElementById('rest-time-text').textContent = newSecs;
+  updateRestCircle(newSecs, restTotal);
 }
 
 function skipRest() {
@@ -3788,7 +4094,7 @@ function skipRest() {
   sendToSW({ type: 'CANCEL_REST' });
   const bar = document.getElementById('inline-rest-bar');
   if (bar) bar.style.display = 'none';
-  closeRestTimer();
+  document.getElementById('rest-modal').classList.remove('open');
 }
 
 function closeRestTimer() {
