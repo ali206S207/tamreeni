@@ -3995,13 +3995,8 @@ function deleteSet(ei, si) {
   state.activeWorkout = activeWorkout;
   saveState();
   updateWorkoutStats();
-  // Re-render this exercise's sets
   const container = document.getElementById(`sets-${ei}`);
   if (container) container.innerHTML = activeWorkout.exercises[ei].sets.map((s, i) => renderSetRow(ei, i, s)).join('');
-}
-  state.activeWorkout = activeWorkout;
-  saveState();
-  renderActiveExercises();
 }
 
 function toggleSetDone(ei, si) {
