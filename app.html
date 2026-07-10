@@ -863,6 +863,80 @@ body::before {
 
 .between-set-timer.active .between-set-timer-label { color: var(--gold); }
 
+/* ─── SET CARDS ─── */
+@keyframes slideInSet {
+  from { opacity:0; transform:translateX(-14px); }
+  to   { opacity:1; transform:translateX(0); }
+}
+.set-card {
+  display:flex; align-items:center; gap:8px;
+  padding:9px 10px; border-radius:12px; margin-bottom:6px;
+  background:var(--bg3); border:1px solid var(--border);
+  transition:all 0.2s cubic-bezier(0.4,0,0.2,1);
+  animation:slideInSet 0.2s ease both;
+}
+.set-card.done-card { background:rgba(41,121,255,0.08); border-color:rgba(41,121,255,0.25); }
+.set-card-num { font-family:var(--font-mono); font-size:14px; font-weight:700; color:var(--text-muted); width:22px; text-align:center; flex-shrink:0; }
+.set-card.done-card .set-card-num { color:var(--gold); }
+.set-card-input {
+  flex:1; background:var(--bg2); border:1px solid var(--border);
+  border-radius:10px; color:var(--text);
+  font-family:var(--font-mono); font-size:20px; font-weight:700;
+  text-align:center; padding:8px 4px; min-width:0; outline:none;
+  transition:border-color .15s, box-shadow .15s; -moz-appearance:textfield;
+}
+.set-card-input::-webkit-outer-spin-button, .set-card-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+.set-card-input:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(41,121,255,0.1); }
+.set-card-sep { font-size:13px; color:var(--text-muted); flex-shrink:0; }
+.set-card-type-btn {
+  width:34px; height:34px; border-radius:8px; border:1px solid var(--border);
+  background:var(--bg3); color:var(--text-muted); font-size:9px;
+  font-family:var(--font-mono); font-weight:700; cursor:pointer; flex-shrink:0; transition:all .15s;
+}
+.set-card-type-btn:active { background:var(--gold); color:#fff; border-color:var(--gold); }
+.set-card-done-btn {
+  width:42px; height:42px; border-radius:10px; border:2px solid var(--border);
+  background:transparent; color:var(--text-muted); cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; transition:all .2s;
+}
+.set-card-done-btn.done { background:var(--green); border-color:var(--green); color:#000; box-shadow:0 0 16px rgba(0,230,118,0.4); }
+.set-card-del-btn {
+  width:28px; height:28px; border-radius:7px; border:none;
+  background:rgba(224,48,48,0.1); color:var(--red); cursor:pointer; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; opacity:0.6; transition:all .15s;
+}
+.set-card-del-btn:active { opacity:1; transform:scale(0.9); }
+
+/* ─── LAST SESSION BANNER ─── */
+.aw-last-session-banner {
+  display:flex; align-items:center; gap:8px; padding:7px 14px;
+  background:rgba(255,255,255,0.02); border-bottom:1px solid var(--border);
+  overflow-x:auto; scrollbar-width:none;
+}
+.aw-last-session-banner::-webkit-scrollbar { display:none; }
+.aw-last-label { font-family:var(--font-mono); font-size:9px; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); flex-shrink:0; }
+.aw-last-session-chip { flex-shrink:0; background:var(--bg3); border:1px solid var(--border); border-radius:8px; padding:4px 10px; display:flex; align-items:center; gap:6px; }
+.aw-last-session-chip-num { font-family:var(--font-mono); font-size:9px; color:var(--text-muted); font-weight:700; }
+.aw-last-session-chip-val { font-family:var(--font-mono); font-size:13px; font-weight:700; color:var(--text-dim); letter-spacing:0.5px; }
+
+/* ─── SET PREV ROW ─── */
+.set-prev-row { display:flex; align-items:center; gap:7px; padding:4px 12px 6px; border-bottom:1px solid var(--border); opacity:0.6; }
+.set-prev-label { font-family:var(--font-mono); font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--text-muted); flex-shrink:0; width:20px; text-align:center; }
+.set-prev-val { font-family:var(--font-mono); font-size:12px; font-weight:600; color:var(--text-muted); background:var(--bg3); border-radius:6px; padding:2px 8px; flex:1; text-align:center; letter-spacing:0.5px; }
+.set-prev-sep { font-size:10px; color:var(--text-muted); flex-shrink:0; }
+.set-prev-delta { font-family:var(--font-mono); font-size:10px; font-weight:700; flex-shrink:0; padding:2px 6px; border-radius:5px; }
+.set-prev-delta.up   { color:#22d35a; background:rgba(34,211,90,0.1); }
+.set-prev-delta.down { color:var(--red); background:rgba(224,48,48,0.1); }
+.set-prev-delta.same { color:var(--text-muted); }
+
+/* ─── DRAG HANDLE ─── */
+.aw-drag-handle { cursor:grab; padding:4px; color:var(--text-muted); touch-action:none; }
+.aw-drag-handle:active { cursor:grabbing; }
+
+/* ─── WARMUP CARD ─── */
+.set-card.warmup-card { background:rgba(41,121,255,0.04); border-color:rgba(41,121,255,0.15); }
+.set-card.warmup-card .set-card-num { color:var(--gold); font-size:11px; }
+
 /* ── FINISH BUTTON ── */
 .finish-workout-btn {
   position: fixed;
@@ -2781,6 +2855,59 @@ self.addEventListener('notificationclick', e => {
   </div>
 </div>
 
+<!-- WARMUP PREVIEW MODAL -->
+<div id="warmup-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:5500;align-items:flex-end;justify-content:center">
+  <div class="modal-sheet" style="max-height:80vh;overflow-y:auto">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div>
+        <div class="modal-title" style="margin-bottom:0">&#128293; احماء ذكي</div>
+        <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted);letter-spacing:1px;margin-top:2px" id="warmup-ex-name"></div>
+      </div>
+      <button onclick="closeWarmupModal()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text-muted);border-radius:8px;padding:7px 14px;font-family:var(--font-mono);font-size:12px;cursor:pointer">X</button>
+    </div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-bottom:14px;padding:8px 10px;background:rgba(41,121,255,0.05);border-radius:8px;border:1px solid rgba(41,121,255,0.15);line-height:1.6">
+      وزن العمل: <strong id="warmup-work-weight" style="color:var(--gold)"></strong>
+    </div>
+    <div id="warmup-sets-preview"></div>
+    <div style="display:flex;gap:10px;margin-top:14px">
+      <button onclick="openGuidedWarmup(_warmupEi)" style="flex:1;background:var(--gold);border:none;color:#fff;border-radius:12px;padding:14px;font-family:var(--font-mono);font-size:14px;font-weight:700;letter-spacing:1px;cursor:pointer;box-shadow:0 0 20px var(--glow)">&#128293; ابدا الاحماء</button>
+      <button onclick="closeWarmupModal()" style="background:var(--bg3);border:1px solid var(--border);color:var(--text-muted);border-radius:12px;padding:14px 16px;cursor:pointer">الغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- GUIDED WARMUP SCREEN -->
+<div id="guided-warmup" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:2000;overflow-y:auto;padding:20px 16px;flex-direction:column;align-items:center;justify-content:flex-start">
+  <div style="width:100%;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+    <div style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--gold)">&#128293; احماء ذكي</div>
+    <button onclick="closeGuidedWarmup()" style="background:var(--bg2);border:1px solid var(--border);color:var(--text-muted);border-radius:8px;padding:8px 14px;font-family:var(--font-mono);font-size:12px;cursor:pointer">X الغاء</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:32px" id="gw-dots"></div>
+  <div id="gw-set-block" style="text-align:center;margin-bottom:24px">
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:2px;margin-bottom:16px" id="gw-set-label"></div>
+    <div style="font-family:var(--font-mono);font-size:72px;font-weight:700;color:var(--text);line-height:1;text-shadow:0 0 30px rgba(41,121,255,0.4)" id="gw-set-weight"></div>
+    <div style="font-size:18px;color:var(--text-dim);margin-top:8px" id="gw-set-reps"></div>
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:8px" id="gw-set-purpose"></div>
+  </div>
+  <div id="gw-rest-block" style="display:none;text-align:center;margin-bottom:24px">
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:2px;margin-bottom:16px">// وقت_الراحة</div>
+    <div style="font-family:var(--font-mono);font-size:80px;font-weight:700;color:var(--gold);text-shadow:0 0 30px var(--glow)" id="gw-rest-num">30</div>
+    <div style="height:4px;background:var(--bg3);border-radius:2px;width:200px;margin:16px auto;overflow:hidden">
+      <div id="gw-rest-bar-fill" style="height:100%;background:linear-gradient(90deg,var(--gold),var(--gold2));border-radius:2px;transition:width 1s linear"></div>
+    </div>
+  </div>
+  <div id="gw-next-preview" style="display:none;align-items:center;gap:12px;padding:12px 16px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;margin-bottom:24px;width:100%;max-width:340px">
+    <div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);letter-spacing:2px">// السيت_الجاي</div>
+      <div style="font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--text);margin-top:4px" id="gw-next-val"></div>
+    </div>
+    <div style="font-size:20px;color:var(--text-muted)">-></div>
+  </div>
+  <button id="gw-action-btn" onclick="gwAction()" style="width:100%;max-width:340px;background:var(--gold);border:none;color:#fff;border-radius:14px;padding:18px;font-family:var(--font-mono);font-size:15px;font-weight:700;letter-spacing:2px;cursor:pointer;box-shadow:0 0 24px var(--glow)">V خلصت السيت</button>
+  <button id="gw-skip-btn" onclick="gwSkipRest()" style="display:none;margin-top:12px;width:100%;max-width:340px;background:none;border:1px solid var(--border);color:var(--text-muted);border-radius:14px;padding:12px;cursor:pointer">تخطى الراحة</button>
+</div>
+
 <!-- CUSTOM NUMPAD -->
 <div id="custom-numpad">
   <div class="numpad-header">
@@ -3705,62 +3832,139 @@ function renderActiveExercises() {
   if (!activeWorkout) return;
   const container = document.getElementById('aw-exercises');
   container.innerHTML = activeWorkout.exercises.map((ex, ei) => `
-    <div class="active-exercise-card">
+    <div class="active-exercise-card" id="awex-${ei}"
+      draggable="true"
+      ondragstart="awDragStart(event,${ei})"
+      ondragover="awDragOver(event,${ei})"
+      ondrop="awDrop(event,${ei})"
+      ondragend="awDragEnd()"
+      style="transition:opacity .2s,transform .2s">
       <div class="active-exercise-header">
-        <div style="flex:1">
-          <div class="active-ex-name">${ex.name}</div>
-          <div style="display:flex;gap:10px;margin-top:2px">
-            <div class="active-ex-muscle">${ex.muscle}</div>
-            ${(()=>{const pr=state.prs[ex.id]; return pr?`<span style="color:var(--gold);font-family:var(--font-condensed);font-size:11px;text-transform:uppercase;letter-spacing:0.5px">🏆 PR: ${pr.weight}kg×${pr.reps}</span>`:''})()}
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+          <div class="aw-drag-handle">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1" fill="currentColor"/><circle cx="9" cy="12" r="1" fill="currentColor"/><circle cx="9" cy="19" r="1" fill="currentColor"/><circle cx="15" cy="5" r="1" fill="currentColor"/><circle cx="15" cy="12" r="1" fill="currentColor"/><circle cx="15" cy="19" r="1" fill="currentColor"/></svg>
           </div>
-          ${(()=>{const last=getLastSession(ex.id); return last?`<div style="font-family:var(--font-condensed);font-size:11px;color:var(--text-muted);margin-top:2px">آخر جلسة: ${last}</div>`:''})()}
+          <div style="flex:1;min-width:0">
+            <div class="active-ex-name">${ex.name}</div>
+            <div style="display:flex;gap:10px;margin-top:2px;flex-wrap:wrap">
+              <div class="active-ex-muscle">${ex.muscle}</div>
+              ${(()=>{ const pr=state.prs[ex.id]; return pr?`<span style="color:var(--gold);font-family:var(--font-mono);font-size:10px">🏆 ${pr.weight}kg×${pr.reps}</span>`:''; })()}
+            </div>
+          </div>
         </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-family:var(--font-condensed);font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">راحة</div>
-          <select onchange="setExRestTime(${ei},this.value)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 6px;font-family:var(--font-condensed);font-size:12px;font-weight:600">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
+          <button onclick="openGuidedWarmup(${ei})" style="background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.25);color:var(--gold);border-radius:8px;padding:5px 10px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px">${ei===0?'🔥 إحماء':'⚡ تنشيط'}</button>
+          <select onchange="setExRestTime(${ei},this.value)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 6px;font-family:var(--font-mono);font-size:11px">
             ${[30,60,90,120,180,240].map(s=>`<option value="${s}" ${(ex.restTime||90)==s?'selected':''}>${s}s</option>`).join('')}
           </select>
         </div>
       </div>
-      <div id="sets-${ei}" style="margin-top:8px">
+      ${buildLastSessionBanner(ex.id)}
+      <div id="sets-${ei}" style="padding:8px 10px 4px">
         ${ex.sets.map((s, si) => renderSetRow(ei, si, s)).join('')}
       </div>
       <div class="add-set-row">
         <button class="btn btn-outline btn-full" style="font-size:11px;padding:8px" onclick="addSet(${ei})">+ إضافة سيت</button>
-        <textarea id="note-${ei}" placeholder="ملاحظة على التمرين..." oninput="updateNote(${ei},this.value)" style="width:100%;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-main);font-size:13px;padding:8px;resize:none;height:60px;outline:none">${'${ex.note||""}'}</textarea>
+        <textarea id="note-${ei}" placeholder="ملاحظة على التمرين..." oninput="updateNote(${ei},this.value)" style="width:100%;margin-top:8px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font-main);font-size:13px;padding:8px;resize:none;height:52px;outline:none">${ex.note||''}</textarea>
       </div>
     </div>
   `).join('');
 }
+
+// ─── LAST SESSION COMPARISON ───
+function getLastExerciseSets(exId) {
+  for (let i = state.log.length - 1; i >= 0; i--) {
+    const logEx = (state.log[i].exercises || []).find(e => e.id === exId);
+    if (logEx) {
+      const done = (logEx.sets || []).filter(s => s.done && (s.weight || s.reps));
+      if (done.length) return done.map(s => ({ weight: parseFloat(s.weight)||0, reps: parseInt(s.reps)||0 }));
+    }
+  }
+  return [];
+}
+
+function buildLastSessionBanner(exId) {
+  const prev = getLastExerciseSets(exId);
+  if (!prev.length) return '';
+  const chips = prev.map((s, i) => `
+    <div class="aw-last-session-chip">
+      <span class="aw-last-session-chip-num">${i+1}</span>
+      <span class="aw-last-session-chip-val">${s.weight>0?s.weight+'kg':'—'}${s.reps>0?' × '+s.reps:''}</span>
+    </div>`).join('');
+  return `<div class="aw-last-session-banner"><span class="aw-last-label">السابق</span>${chips}</div>`;
+}
+
+function buildSetPrevRow(ei, si) {
+  const exId = activeWorkout.exercises[ei].id;
+  const prev = getLastExerciseSets(exId);
+  const p = prev[si];
+  if (!p) return '';
+  const cur = activeWorkout.exercises[ei].sets[si];
+  const curW = parseFloat(cur.weight)||0;
+  let deltaHtml = '';
+  if (cur.done && curW > 0 && p.weight > 0) {
+    const diff = Math.round((curW - p.weight)*10)/10;
+    if (diff > 0)      deltaHtml = `<span class="set-prev-delta up">+${diff}kg</span>`;
+    else if (diff < 0) deltaHtml = `<span class="set-prev-delta down">${diff}kg</span>`;
+    else               deltaHtml = `<span class="set-prev-delta same">=</span>`;
+  }
+  return `<div class="set-prev-row">
+    <span class="set-prev-label">S${si+1}</span>
+    <span class="set-prev-val">${p.weight>0?p.weight+' kg':'—'}</span>
+    <span class="set-prev-sep">×</span>
+    <span class="set-prev-val">${p.reps>0?p.reps:'—'}</span>
+    ${deltaHtml}
+  </div>`;
+}
+
+// ─── DRAG & DROP (exercises reorder) ───
+let _awDragIdx = null;
+function awDragStart(e, ei) { _awDragIdx = ei; e.dataTransfer.effectAllowed='move'; setTimeout(()=>{ const el=document.getElementById(`awex-${ei}`); if(el) el.style.opacity='0.4'; },0); }
+function awDragOver(e, ei) { e.preventDefault(); e.dataTransfer.dropEffect='move'; }
+function awDrop(e, ei) {
+  e.preventDefault();
+  if (_awDragIdx === null || _awDragIdx === ei) return;
+  const exs = activeWorkout.exercises;
+  const moved = exs.splice(_awDragIdx, 1)[0];
+  exs.splice(ei, 0, moved);
+  _awDragIdx = null;
+  state.activeWorkout = activeWorkout;
+  saveState();
+  renderActiveExercises();
+}
+function awDragEnd() { _awDragIdx = null; document.querySelectorAll('.active-exercise-card').forEach(el => el.style.opacity='1'); }
 
 function renderSetRow(ei, si, s) {
   const exId = activeWorkout.exercises[ei].id;
   const pr = state.prs[exId];
   const isPR = s.done && pr && parseFloat(s.weight) >= pr.weight && parseInt(s.reps) >= pr.reps;
   const typeLabel = s.setType==='superset'?'SS':s.setType==='dropset'?'DS':'—';
-  const typeBg = s.setType==='superset'?'rgba(41,121,255,0.25)':s.setType==='dropset'?'rgba(100,80,200,0.25)':'var(--bg3)';
-  const restSec = (activeWorkout.exercises[ei].restTime || 90);
-  const restLabel = restSec >= 60 ? (restSec/60).toFixed(0)+':00' : restSec+'s';
+  const restSec = activeWorkout.exercises[ei].restTime || 90;
+  const restLabel = restSec >= 60 ? Math.floor(restSec/60)+':00' : restSec+'s';
+  const prevRow = buildSetPrevRow(ei, si);
   return `
-    <div id="row-${ei}-${si}" class="set-card ${s.done?'done-card':''}" style="animation-delay:${si*0.05}s">
-      <div class="set-card-num">${si+1}</div>
-      <input type="number" class="set-card-input" value="${s.weight}" placeholder="kg" min="0" step="0.5"
-        readonly onfocus="openNumpad(this,'weight',${ei},${si})" inputmode="none">
-      <div class="set-card-sep">×</div>
-      <input type="number" class="set-card-input" value="${s.reps}" placeholder="0" min="0"
-        readonly onfocus="openNumpad(this,'reps',${ei},${si})" inputmode="none">
-      <button class="set-card-type-btn" onclick="cycleSetType(${ei},${si})"
-        style="background:${typeBg};color:var(--text)">${typeLabel}</button>
-      <button class="set-card-done-btn ${s.done?'done':''}" onclick="toggleSetDone(${ei},${si})">
-        ${isPR ? '🏆' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'}
-      </button>
+  ${prevRow||''}
+  <div id="row-${ei}-${si}" class="set-card ${s.done?'done-card':''} ${s.setType==='warmup'?'warmup-card':''}" style="animation-delay:${si*0.05}s">
+    <div class="set-card-num">${s.setType==='warmup'?'W'+(si+1):(si+1)}</div>
+    <input type="number" class="set-card-input" value="${s.weight||''}" placeholder="kg" min="0" step="0.5"
+      readonly onfocus="openNumpad(this,'weight',${ei},${si})" inputmode="none">
+    <div class="set-card-sep">×</div>
+    <input type="number" class="set-card-input" value="${s.reps||''}" placeholder="0" min="0"
+      readonly onfocus="openNumpad(this,'reps',${ei},${si})" inputmode="none">
+    <button class="set-card-type-btn" onclick="cycleSetType(${ei},${si})">${typeLabel}</button>
+    <button class="set-card-done-btn ${s.done?'done':''}" onclick="toggleSetDone(${ei},${si})">
+      ${isPR ? '🏆' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>'}
+    </button>
+    <button class="set-card-del-btn" onclick="deleteSet(${ei},${si})">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+    </button>
+  </div>
+  <div id="bst-${ei}-${si}" class="between-set-timer ${s.done?'active':''}">
+    <div class="between-set-timer-bar-wrap">
+      <div class="between-set-timer-fill" id="bst-fill-${ei}-${si}" style="width:${s.done?'100%':'0%'}"></div>
     </div>
-    <div id="bst-${ei}-${si}" class="between-set-timer ${s.done ? 'active' : ''}">
-      <div class="between-set-timer-bar-wrap">
-        <div class="between-set-timer-fill" id="bst-fill-${ei}-${si}" style="width:${s.done?'100%':'0%'}"></div>
-      </div>
-      <div class="between-set-timer-label" id="bst-label-${ei}-${si}">${restLabel}</div>
-    </div>`;
+    <div class="between-set-timer-label" id="bst-label-${ei}-${si}">${restLabel}</div>
+  </div>`;
 }
 
 function updateSet(ei, si, field, val) {
@@ -3777,9 +3981,24 @@ function setExRestTime(ei, val) {
 
 function cycleSetType(ei, si) {
   const s = activeWorkout.exercises[ei].sets[si];
-  const types = [undefined, 'superset', 'dropset'];
+  const types = [undefined, 'superset', 'dropset', 'warmup'];
   const cur = types.indexOf(s.setType);
   s.setType = types[(cur + 1) % types.length];
+  state.activeWorkout = activeWorkout;
+  saveState();
+  const container = document.getElementById(`row-${ei}-${si}`);
+  if (container) container.outerHTML = renderSetRow(ei, si, s);
+}
+
+function deleteSet(ei, si) {
+  activeWorkout.exercises[ei].sets.splice(si, 1);
+  state.activeWorkout = activeWorkout;
+  saveState();
+  updateWorkoutStats();
+  // Re-render this exercise's sets
+  const container = document.getElementById(`sets-${ei}`);
+  if (container) container.innerHTML = activeWorkout.exercises[ei].sets.map((s, i) => renderSetRow(ei, i, s)).join('');
+}
   state.activeWorkout = activeWorkout;
   saveState();
   renderActiveExercises();
@@ -5027,6 +5246,218 @@ async function sendCoachMsg(overrideQuestion) {
     addCoachMsg('ai', '⚠️ مش قادر أتصل بالسيرفر — اتأكد من الإنترنت');
   }
 }
+
+
+// ============================================================
+// SMART WARMUP
+// ============================================================
+const WARMUP_PROTOCOL = [
+  [0,    12, 'بار فاضي — تصحية العضلة والتكنيك', 30],
+  [0.30,  6, '30% — احماء عضلي خفيف', 60],
+  [0.60,  3, '60% — تجهيز جهاز عصبي', 90],
+  [0.80,  1, '80% — تفعيل CNS', 120],
+];
+
+let _warmupEi = null;
+let _gwSets = [];
+let _gwStep = 0;
+let _gwPhase = 'set';
+let _gwRestInterval = null;
+let _gwRestRemaining = 0;
+let _gwRestTotal = 0;
+let _gwEi = null;
+let _gwIsFirst = true;
+const GW_REST_TIMES = [30, 60, 90, 120];
+
+function _isBarbell(ei) {
+  const ex = activeWorkout.exercises[ei];
+  const dbEx = EXERCISES_DB.find(e => e.id === ex.id);
+  return dbEx && (dbEx.type === 'Barbell' || (dbEx.equipment||'').toLowerCase().includes('barbell'));
+}
+
+function _roundToPlate(weight, barWeight) {
+  const load = Math.max(0, weight - barWeight);
+  const perSide = Math.round((load / 2) / 2.5) * 2.5;
+  return barWeight + perSide * 2;
+}
+
+function _getWorkProfile(ei) {
+  const ex = activeWorkout.exercises[ei];
+  const workingSets = ex.sets.filter(s => s.setType !== 'warmup' && parseFloat(s.weight) > 0);
+  if (workingSets.length > 0) {
+    const weight = Math.max(...workingSets.map(s => parseFloat(s.weight)||0));
+    const avgReps = workingSets.reduce((a,s) => a+(parseInt(s.reps)||0),0) / workingSets.length;
+    return { weight, avgReps: avgReps||5, sets: workingSets.length };
+  }
+  const prev = getLastExerciseSets(ex.id).filter(s => s.weight > 0);
+  if (prev.length > 0) {
+    const weight = Math.max(...prev.map(s => s.weight||0));
+    const avgReps = prev.reduce((a,s) => a+(s.reps||0),0) / prev.length;
+    return { weight, avgReps: avgReps||5, sets: prev.length };
+  }
+  return { weight: 0, avgReps: 5, sets: 3 };
+}
+
+function _calcWarmupReps(baseReps, volumeFactor, pct) {
+  const maxReps = pct <= 0.35 ? 10 : pct <= 0.65 ? 5 : pct <= 0.82 ? 2 : 1;
+  const minReps = pct <= 0.35 ? 6  : pct <= 0.65 ? 3 : 1;
+  return Math.round(maxReps - (maxReps - minReps) * volumeFactor);
+}
+
+function openGuidedWarmup(ei) {
+  if (ei === null || ei === undefined) return;
+  _gwEi = ei;
+  _gwIsFirst = ei === 0;
+  const profile = _getWorkProfile(ei);
+  const { weight: workWeight, avgReps, sets: numSets } = profile;
+  const isBar = _isBarbell(ei);
+  const barWeight = isBar ? 20 : 0;
+
+  if (workWeight <= 0) { showToast('حدد وزن السيت الاول اولا'); return; }
+
+  const volumeFactor = Math.min(1, Math.max(0, (workWeight * avgReps * numSets - workWeight * 5 * 3) / (workWeight * 5 * 3 * 3)));
+
+  const steps = _gwIsFirst
+    ? [
+        { pct: 0,    label: 'بار فاضي', purpose: 'تصحية العضلة والتكنيك', restIdx: 0 },
+        { pct: 0.30, label: '30%',      purpose: 'احماء عضلي',             restIdx: 1 },
+        { pct: 0.60, label: '60%',      purpose: 'تجهيز جهاز عصبي',        restIdx: 2 },
+        { pct: 0.80, label: '80%',      purpose: 'تفعيل CNS',              restIdx: 3 },
+      ]
+    : [{ pct: 0.50, label: '50%', purpose: 'سيت تنشيط سريع', restIdx: 1 }];
+
+  _gwSets = steps.map(step => {
+    let weight = step.pct === 0
+      ? (isBar ? barWeight : Math.round(workWeight * 0.20 / 2.5) * 2.5)
+      : (isBar ? _roundToPlate(workWeight * step.pct, barWeight) : Math.round(workWeight * step.pct / 2.5) * 2.5);
+    weight = Math.max(weight, isBar ? barWeight : 0);
+    const reps = _calcWarmupReps(avgReps, volumeFactor, step.pct);
+    return { weight, reps: Math.max(1, reps), label: step.label, purpose: step.purpose, rest: GW_REST_TIMES[step.restIdx] };
+  }).filter(s => s.weight < workWeight);
+
+  if (!_gwSets.length) { showToast('الوزن خفيف — مش محتاج احماء'); return; }
+
+  // Close warmup preview if open
+  const wm = document.getElementById('warmup-modal');
+  if (wm) wm.style.display = 'none';
+
+  _gwStep = 0;
+  _gwPhase = 'set';
+  const gw = document.getElementById('guided-warmup');
+  if (gw) gw.style.display = 'flex';
+  _gwRenderStep();
+}
+
+function closeGuidedWarmup() {
+  _gwClearRest();
+  const gw = document.getElementById('guided-warmup');
+  if (gw) gw.style.display = 'none';
+}
+
+function closeWarmupModal() {
+  const wm = document.getElementById('warmup-modal');
+  if (wm) wm.style.display = 'none';
+  _warmupEi = null;
+}
+
+function _gwRenderDots() {
+  const dots = document.getElementById('gw-dots');
+  if (!dots) return;
+  dots.innerHTML = _gwSets.map((_, i) => {
+    const color = i < _gwStep ? 'var(--green)' : i === _gwStep ? 'var(--gold)' : 'var(--border)';
+    const size = i === _gwStep ? '14px' : '10px';
+    return `<div style="width:${size};height:${size};border-radius:50%;background:${color};transition:all .3s;${i===_gwStep?'box-shadow:0 0 10px var(--glow)':''}"></div>`;
+  }).join('');
+}
+
+function _gwRenderStep() {
+  const s = _gwSets[_gwStep];
+  const isLast = _gwStep === _gwSets.length - 1;
+  _gwRenderDots();
+
+  const setBlock  = document.getElementById('gw-set-block');
+  const restBlock = document.getElementById('gw-rest-block');
+  const skipBtn   = document.getElementById('gw-skip-btn');
+  const actionBtn = document.getElementById('gw-action-btn');
+  const nextEl    = document.getElementById('gw-next-preview');
+
+  if (_gwPhase === 'set') {
+    if (setBlock)  setBlock.style.display = 'block';
+    if (restBlock) restBlock.style.display = 'none';
+    if (skipBtn)   skipBtn.style.display = 'none';
+    document.getElementById('gw-set-label').textContent = 'السيت ' + (_gwStep+1) + ' من ' + _gwSets.length + ' — ' + s.label;
+    document.getElementById('gw-set-weight').textContent = s.weight;
+    document.getElementById('gw-set-reps').textContent = s.reps + ' رباعة';
+    document.getElementById('gw-set-purpose').textContent = s.purpose;
+    if (nextEl) {
+      if (!isLast) {
+        const next = _gwSets[_gwStep+1];
+        nextEl.style.display = 'flex';
+        document.getElementById('gw-next-val').textContent = next.weight + ' kg x ' + next.reps;
+      } else { nextEl.style.display = 'none'; }
+    }
+    if (actionBtn) { actionBtn.textContent = 'V خلصت السيت'; actionBtn.style.background = 'var(--gold)'; }
+  } else {
+    if (setBlock)  setBlock.style.display = 'none';
+    if (restBlock) restBlock.style.display = 'block';
+    if (skipBtn)   skipBtn.style.display = 'block';
+    if (nextEl)    nextEl.style.display = 'none';
+    if (actionBtn) { actionBtn.textContent = 'تخطى الراحة'; actionBtn.style.background = 'var(--bg3)'; actionBtn.style.color = 'var(--text-muted)'; }
+    _gwRestRemaining = s.rest;
+    _gwRestTotal = s.rest;
+    _gwTickRest();
+  }
+}
+
+function _gwTickRest() {
+  _gwClearRest();
+  _gwUpdateRestUI();
+  _gwRestInterval = setInterval(() => {
+    _gwRestRemaining--;
+    _gwUpdateRestUI();
+    if (_gwRestRemaining <= 0) {
+      _gwClearRest();
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+      _gwNextStep();
+    }
+  }, 1000);
+}
+
+function _gwUpdateRestUI() {
+  const numEl  = document.getElementById('gw-rest-num');
+  const fillEl = document.getElementById('gw-rest-bar-fill');
+  if (numEl)  numEl.textContent = _gwRestRemaining;
+  if (fillEl) fillEl.style.width = (_gwRestTotal > 0 ? (_gwRestRemaining / _gwRestTotal * 100) : 0) + '%';
+}
+
+function _gwClearRest() {
+  if (_gwRestInterval) { clearInterval(_gwRestInterval); _gwRestInterval = null; }
+}
+
+function gwAction() {
+  if (_gwPhase === 'set') {
+    if (_gwStep === _gwSets.length - 1) { _gwFinish(); return; }
+    _gwPhase = 'rest';
+    _gwRenderStep();
+  } else { gwSkipRest(); }
+}
+
+function gwSkipRest() { _gwClearRest(); _gwNextStep(); }
+
+function _gwNextStep() {
+  _gwStep++;
+  if (_gwStep >= _gwSets.length) { _gwFinish(); return; }
+  _gwPhase = 'set';
+  _gwRenderStep();
+}
+
+function _gwFinish() {
+  _gwClearRest();
+  const gw = document.getElementById('guided-warmup');
+  if (gw) gw.style.display = 'none';
+  showToast(_gwIsFirst ? 'انتهى الاحماء — استنى دقيقتين ثم ابدا' : 'سيت التنشيط خلص — ابدا وزنك');
+}
+
 
 // ── First time gym setup ──
 let firstGymColor = '#2979FF';
