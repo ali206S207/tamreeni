@@ -2499,11 +2499,38 @@ self.addEventListener('notificationclick', e => {
         <div class="page-title">مكتبة <span class="gold">التمارين</span></div>
         <button class="btn btn-gold" style="padding:8px 14px;font-size:12px;display:flex;align-items:center;gap:6px" onclick="openAddExModal()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          إضافة
+          تمرين مخصص
         </button>
       </div>
-      <input type="text" class="search-input" placeholder="🔍  ابحث عن تمرين..." id="lib-search" oninput="renderLibrary()">
-      <div class="filter-row" id="muscle-filters"></div>
+
+      <!-- Search -->
+      <div style="position:relative;margin-bottom:10px">
+        <input type="text" class="search-input" placeholder="ابحث باسم التمرين أو العضلة..." id="lib-search" oninput="renderLibrary()" style="padding-right:40px">
+        <svg style="position:absolute;right:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--text-muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+
+      <!-- Muscle filters -->
+      <div class="filter-row" id="muscle-filters" style="margin-bottom:14px"></div>
+
+      <!-- Equipment filter -->
+      <div class="filter-row" id="equip-filters" style="margin-bottom:14px;padding-top:0;border-top:none"></div>
+
+      <!-- Stats bar -->
+      <div style="display:flex;gap:0;background:var(--bg2);border:1px solid var(--border);border-radius:10px;margin-bottom:16px;overflow:hidden" id="lib-stats-bar">
+        <div style="flex:1;padding:8px;text-align:center;border-left:1px solid var(--border)">
+          <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--gold)" id="lib-stat-count">88</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);letter-spacing:1px">تمرين</div>
+        </div>
+        <div style="flex:1;padding:8px;text-align:center;border-left:1px solid var(--border)">
+          <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--gold)" id="lib-stat-muscles">8</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);letter-spacing:1px">مجموعة</div>
+        </div>
+        <div style="flex:1;padding:8px;text-align:center">
+          <div style="font-family:var(--font-mono);font-size:18px;font-weight:700;color:var(--gold)" id="lib-stat-done">0</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);letter-spacing:1px">مستخدم</div>
+        </div>
+      </div>
+
       <div id="library-list"></div>
     </div>
 
@@ -3939,52 +3966,150 @@ function deleteGym(gymId) {
 // ============================================================
 // LIBRARY
 // ============================================================
-function renderLibrary() {
-  const search = document.getElementById('lib-search').value.toLowerCase();
-  const muscles = ['All', ...new Set(EXERCISES_DB.map(e => e.muscle))];
-  
-  const filtersEl = document.getElementById('muscle-filters');
-  filtersEl.innerHTML = muscles.map(m => `
-    <div class="filter-chip ${activeFilterMuscle === m ? 'active' : ''}" onclick="setFilter('${m}')">${m === 'All' ? 'الكل' : m}</div>
-  `).join('');
+let activeFilterEquip = 'All';
+const MUSCLE_ICONS = {
+  'Chest':'💪', 'Shoulders':'🔝', 'Triceps':'⬇️', 'Back':'🔙',
+  'Biceps':'⬆️', 'Legs':'🦵', 'Abs':'🎯', 'Cardio':'🏃'
+};
+const MUSCLE_AR = {
+  'Chest':'صدر', 'Shoulders':'أكتاف', 'Triceps':'ترايسبس',
+  'Back':'ظهر', 'Biceps':'بايسبس', 'Legs':'أرجل', 'Abs':'بطن', 'Cardio':'كارديو'
+};
 
+function renderLibrary() {
+  const search  = (document.getElementById('lib-search')?.value || '').toLowerCase();
+  const muscles = ['All', ...new Set(EXERCISES_DB.map(e => e.muscle))];
+  const equips  = ['All', 'Barbell', 'Dumbbell', 'Cable', 'Machine', 'Bodyweight', 'Cardio'];
+
+  // Muscle filter chips
+  const filtersEl = document.getElementById('muscle-filters');
+  if (filtersEl) filtersEl.innerHTML = muscles.map(m => `
+    <div class="filter-chip ${activeFilterMuscle===m?'active':''}" onclick="setFilter('${m}')">
+      ${m==='All' ? 'الكل' : (MUSCLE_ICONS[m]||'')+'  '+(MUSCLE_AR[m]||m)}
+    </div>`).join('');
+
+  // Equipment filter chips
+  const equipEl = document.getElementById('equip-filters');
+  if (equipEl) equipEl.innerHTML = equips.map(e => `
+    <div class="filter-chip ${activeFilterEquip===e?'active':''}" onclick="setEquipFilter('${e}')" style="font-size:10px">
+      ${e==='All'?'كل الأدوات':e}
+    </div>`).join('');
+
+  // Filter exercises
   const filtered = EXERCISES_DB.filter(ex => {
-    const matchSearch = !search || ex.name.toLowerCase().includes(search) || (ex.nameAr && ex.nameAr.includes(search)) || ex.muscle.toLowerCase().includes(search);
-    const matchMuscle = activeFilterMuscle === 'All' || ex.muscle === activeFilterMuscle;
-    return matchSearch && matchMuscle;
+    const matchS = !search
+      || ex.name.toLowerCase().includes(search)
+      || (ex.nameAr||'').includes(search)
+      || ex.muscle.toLowerCase().includes(search);
+    const matchM = activeFilterMuscle==='All' || ex.muscle===activeFilterMuscle;
+    const matchE = activeFilterEquip==='All'
+      || ex.type===activeFilterEquip
+      || ex.equipment.toLowerCase().includes(activeFilterEquip.toLowerCase());
+    return matchS && matchM && matchE;
   });
+
+  // Update stats
+  const usedIds = new Set(state.log.flatMap(l => (l.exercises||[]).map(e => e.id)));
+  const stat1 = document.getElementById('lib-stat-count');
+  const stat2 = document.getElementById('lib-stat-muscles');
+  const stat3 = document.getElementById('lib-stat-done');
+  if (stat1) stat1.textContent = filtered.length;
+  if (stat2) stat2.textContent = new Set(filtered.map(e=>e.muscle)).size;
+  if (stat3) stat3.textContent = filtered.filter(e=>usedIds.has(e.id)).length;
 
   const list = document.getElementById('library-list');
   if (!filtered.length) {
-    list.innerHTML = '<div class="empty-state"><span class="empty-state-icon">🔍</span><div class="empty-state-title">مفيش نتايج</div><div class="empty-state-text">جرب كلمة تانية</div></div>';
+    list.innerHTML = `<div class="empty-state">
+      <span class="empty-state-icon">🔍</span>
+      <div class="empty-state-title">مفيش نتايج</div>
+      <div class="empty-state-text">جرب كلمة تانية أو غير الفلتر</div>
+    </div>`;
     return;
   }
 
-  list.innerHTML = filtered.map(ex => {
-    const customBadge = ex.custom ? '<span style="background:rgba(41,121,255,0.15);border:1px solid rgba(41,121,255,0.4);color:var(--gold);border-radius:4px;padding:1px 6px;font-size:9px;font-family:var(--font-mono);font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-right:6px">مخصص</span>' : '';
-        const deleteBtn = ex.custom ? ('<button onclick="deleteCustomExercise(\'' + ex.id + '\')" style="background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.3);color:var(--gold);border-radius:6px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center"><svg width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2.5\'><polyline points=\'3 6 5 6 21 6\'/><path d=\'M19 6l-1 14H6L5 6\'/><path d=\'M10 11v6M14 11v6\'/></svg></button>') : '';
-    const borderStyle = ex.custom ? 'border-color:rgba(41,121,255,0.3)' : '';
-    return `
-    <div class="lib-exercise-item" style="${borderStyle}">
-      <div class="lib-ex-info">
-        <div class="lib-ex-name">${ex.nameAr || ex.name} ${customBadge}</div>
-        <div style="font-size:11px;color:var(--text-dim);font-family:var(--font-mono)">${ex.name}</div>
-        <div class="lib-ex-tags">
-          <span class="tag muscle">${ex.muscle}</span>
-          <span class="tag">${ex.type}</span>
-          <span class="tag">${ex.equipment}</span>
+  // Group by muscle
+  const grouped = {};
+  filtered.forEach(ex => {
+    if (!grouped[ex.muscle]) grouped[ex.muscle] = [];
+    grouped[ex.muscle].push(ex);
+  });
+
+  // If searching or filtered — show flat list
+  const showGrouped = !search && activeFilterMuscle === 'All' && activeFilterEquip === 'All';
+
+  if (showGrouped) {
+    list.innerHTML = Object.entries(grouped).map(([muscle, exs]) => `
+      <div style="margin-bottom:20px">
+        <!-- Group header -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:10px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;cursor:pointer" onclick="toggleMuscleGroup('${muscle}')">
+          <span style="font-size:20px">${MUSCLE_ICONS[muscle]||'💪'}</span>
+          <div style="flex:1">
+            <div style="font-family:var(--font-main);font-size:15px;font-weight:700">${MUSCLE_AR[muscle]||muscle}</div>
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);letter-spacing:1px">${exs.length} تمرين · ${muscle}</div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:12px;color:var(--gold)">${exs.filter(e=>usedIds.has(e.id)).length}/${exs.length}</div>
+          <span id="grp-arrow-${muscle}" style="color:var(--text-muted);font-size:16px;transition:transform .2s">▾</span>
         </div>
+        <!-- Exercises in group -->
+        <div id="grp-${muscle}" style="display:block">
+          ${exs.map(ex => renderLibCard(ex, usedIds)).join('')}
+        </div>
+      </div>`).join('');
+  } else {
+    list.innerHTML = filtered.map(ex => renderLibCard(ex, usedIds)).join('');
+  }
+}
+
+function renderLibCard(ex, usedIds) {
+  const pr = state.prs[ex.id];
+  const used = usedIds.has(ex.id);
+  const prBadge = pr ? `<span style="background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.3);color:var(--gold);border-radius:6px;padding:2px 7px;font-family:var(--font-mono);font-size:9px;font-weight:700">🏆 ${pr.weight}kg×${pr.reps}</span>` : '';
+  const usedDot = used ? `<span style="width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);display:inline-block;flex-shrink:0"></span>` : '';
+  const customBadge = ex.custom ? `<span style="background:rgba(41,121,255,0.15);border:1px solid rgba(41,121,255,0.4);color:var(--gold);border-radius:4px;padding:1px 6px;font-size:9px;font-family:var(--font-mono);font-weight:700">مخصص</span>` : '';
+  const deleteBtn = ex.custom
+    ? `<button onclick="deleteCustomExercise('${ex.id}')" style="background:rgba(224,48,48,0.1);border:1px solid rgba(224,48,48,0.3);color:var(--red);border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+       </button>` : '';
+
+  return `
+  <div class="lib-exercise-item" style="${ex.custom?'border-color:rgba(41,121,255,0.3)':''}">
+    <div class="lib-ex-info" style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:4px">
+        ${usedDot}
+        <div class="lib-ex-name" style="margin-bottom:0">${ex.nameAr||ex.name}</div>
+        ${customBadge}
       </div>
-      <div style="display:flex;gap:6px;align-items:center">
-        ${deleteBtn}
-        <button class="add-to-day-btn" onclick="openAddToDay(null,null,'${ex.id}')">+ أضف</button>
+      <div style="font-size:10px;color:var(--text-muted);font-family:var(--font-mono);margin-bottom:5px">${ex.name}</div>
+      <div class="lib-ex-tags">
+        <span class="tag muscle">${MUSCLE_AR[ex.muscle]||ex.muscle}</span>
+        <span class="tag">${ex.type}</span>
+        <span class="tag">${ex.equipment}</span>
+        ${prBadge}
       </div>
-    </div>`;
-  }).join('');
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+      ${deleteBtn}
+      <button class="add-to-day-btn" onclick="openAddToDay(null,null,'${ex.id}')">+ أضف</button>
+    </div>
+  </div>`;
+}
+
+function toggleMuscleGroup(muscle) {
+  const grp   = document.getElementById('grp-' + muscle);
+  const arrow = document.getElementById('grp-arrow-' + muscle);
+  if (!grp) return;
+  const open = grp.style.display !== 'none';
+  grp.style.display   = open ? 'none' : 'block';
+  if (arrow) arrow.style.transform = open ? 'rotate(-90deg)' : '';
 }
 
 function setFilter(m) {
   activeFilterMuscle = m;
+  renderLibrary();
+}
+
+function setEquipFilter(e) {
+  activeFilterEquip = e;
   renderLibrary();
 }
 
