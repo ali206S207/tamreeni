@@ -2571,11 +2571,20 @@ self.addEventListener('notificationclick', e => {
       <div class="page-header">
         <div class="page-title">الجيمات <span class="gold">المسجلة</span></div>
       </div>
+      <div id="pro-status-bar" style="margin-bottom:16px"></div>
       <div class="section-title">الجيم الحالي</div>
       <div id="gyms-active-card" style="margin-bottom:16px"></div>
       <div class="section-title">كل الجيمات</div>
       <div id="gyms-list"></div>
       <button class="btn btn-outline btn-full" style="margin-top:8px" onclick="openAddGymModal()">+ إضافة جيم جديد</button>
+    </div>
+
+    <!-- ACCOUNT PAGE -->
+    <div id="page-account" class="page" style="display:none">
+      <div class="page-header">
+        <div class="page-title">حسابي <span class="gold">الشخصي</span></div>
+      </div>
+      <div id="account-content"></div>
     </div>
 
     <!-- PROGRAMS PAGE -->
@@ -2612,6 +2621,10 @@ self.addEventListener('notificationclick', e => {
     <button class="nav-btn" onclick="navigate('gyms')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       الجيم
+    </button>
+    <button class="nav-btn" onclick="navigate('account')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      حسابي
     </button>
     <button class="nav-btn" onclick="openCoach()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><path d="M18 2v4h4"/></svg>
@@ -6036,12 +6049,49 @@ async function submitCode() {
   const result = await verifyCode(code);
   document.getElementById('code-loading').style.display = 'none';
   if (!result.ok) { showToast('❌ ' + result.msg); return; }
+
   currentCode = result.code;
   isPro = true;
   localStorage.setItem('tamreeni_code', currentCode);
-  await loadUserDataFromCloud();
+
+  // هل عنده بيانات على السيرفر؟
+  const { data: cloudData } = await supa
+    .from('tamreeni_users')
+    .select('code, updated_at')
+    .eq('code', currentCode)
+    .single();
+
+  const hasLocalData = gyms.length > 0 || state.log.length > 0 || Object.keys(state.prs).length > 0;
+  const hasCloudData = !!cloudData;
+
+  if (hasLocalData && !hasCloudData) {
+    // مستخدم جديد بيانات محلية — انقلها للسيرفر
+    document.getElementById('code-loading').style.display = 'block';
+    document.querySelector('#code-loading div').textContent = '// جاري نقل بياناتك...';
+    await syncToCloud();
+    document.getElementById('code-loading').style.display = 'none';
+    showToast('✓ تم نقل بياناتك للحساب 🎉');
+  } else if (hasCloudData) {
+    // عنده بيانات على السيرفر — حملها
+    if (hasLocalData) {
+      // الاتنين فيهم بيانات — اسأل المستخدم
+      const useCloud = confirm('عندك بيانات على السيرفر — تحمّل بيانات حسابك؟\n(موافق = بيانات السيرفر، إلغاء = بياناتك الحالية)');
+      if (useCloud) {
+        await loadUserDataFromCloud();
+        showToast('✓ تم تحميل بيانات حسابك');
+      } else {
+        await syncToCloud();
+        showToast('✓ تم رفع بياناتك للحساب');
+      }
+    } else {
+      await loadUserDataFromCloud();
+      showToast('✓ أهلاً بك في تمرينتي Pro 💪');
+    }
+  } else {
+    showToast('✓ أهلاً بك في تمرينتي Pro 💪');
+  }
+
   document.getElementById('code-screen').classList.remove('open');
-  showToast('✓ أهلاً بك في تمرينتي Pro 💪');
   renderDash();
   renderGymsSettings();
 }
@@ -6154,20 +6204,132 @@ window.confirmAddGym = function() {
 // ── Update navigate to handle new pages ──
 const _origNavigate = navigate;
 window.navigate = function(page) {
-  const allPages = ['dash','workout','programs','progress','log','gyms'];
+  const allPages = ['dash','workout','programs','progress','log','gyms','account','coach'];
   document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const pageEl = document.getElementById('page-' + page);
   if (pageEl) { pageEl.style.display = 'block'; pageEl.classList.add('active'); }
-  const idx = allPages.indexOf(page);
-  if (idx !== -1) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  // Nav buttons: dash, workout, programs, progress, log, gyms, account, coach(openCoach)
+  const navBtns = document.querySelectorAll('.nav-btn');
+  const navMap = { dash:0, workout:1, programs:2, progress:3, log:4, gyms:5, account:6 };
+  if (navMap[page] !== undefined && navBtns[navMap[page]]) navBtns[navMap[page]].classList.add('active');
   if (page === 'dash')     renderDash();
   if (page === 'workout')  renderPPL();
   if (page === 'progress') renderProgress();
   if (page === 'log')      renderLog();
   if (page === 'gyms')     renderGymsSettings();
   if (page === 'programs') renderPrograms();
+  if (page === 'account')  renderAccount();
 };
+
+// ============================================================
+// ACCOUNT PAGE
+// ============================================================
+function renderAccount() {
+  const el = document.getElementById('account-content');
+  if (!el) return;
+
+  // Stats
+  const totalWorkouts = state.log.length;
+  const totalSets     = state.log.reduce((a, l) => a + (l.exercises||[]).reduce((b,e)=>b+(e.sets||[]).filter(s=>s.done).length,0), 0);
+  const totalVol      = state.log.reduce((a,l) => a + (l.exercises||[]).reduce((b,e)=>b+(e.sets||[]).filter(s=>s.done).reduce((c,s)=>c+(parseFloat(s.weight)||0)*(parseInt(s.reps)||0),0),0), 0);
+  const totalPRs      = Object.keys(state.prs).length;
+  const firstWorkout  = state.log.length ? state.log[0].date : null;
+  const lastSync      = localStorage.getItem('tamreeni_last_sync') || '—';
+
+  el.innerHTML = `
+    <!-- Account Card -->
+    <div style="background:linear-gradient(135deg,rgba(41,121,255,0.1),var(--bg2));border:1px solid rgba(41,121,255,0.3);border-radius:16px;padding:20px;margin-bottom:16px;position:relative;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),var(--gold2));box-shadow:0 0 10px var(--glow)"></div>
+      ${isPro ? `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:48px;height:48px;border-radius:12px;background:rgba(41,121,255,0.15);border:1px solid rgba(41,121,255,0.3);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 12px var(--glow)">⚡</div>
+          <div>
+            <div style="font-family:var(--font-main);font-size:16px;font-weight:900;color:var(--text)">حساب Pro</div>
+            <div style="font-family:var(--font-mono);font-size:11px;color:var(--gold);letter-spacing:1px;margin-top:2px">${currentCode}</div>
+          </div>
+          <div style="margin-right:auto">
+            <span style="background:rgba(41,121,255,0.15);border:1px solid rgba(41,121,255,0.4);color:var(--gold);border-radius:20px;padding:4px 12px;font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:1px">PRO ✓</span>
+          </div>
+        </div>` : `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:48px;height:48px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px">👤</div>
+          <div>
+            <div style="font-family:var(--font-main);font-size:16px;font-weight:900;color:var(--text)">حساب مجاني</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">بدون كود — بياناتك محلية فقط</div>
+          </div>
+        </div>`}
+
+      <!-- Sync Status -->
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border-radius:10px;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="width:8px;height:8px;border-radius:50%;background:${isPro?'var(--green)':'var(--text-muted)'};box-shadow:${isPro?'0 0 8px var(--green)':'none'};flex-shrink:0"></span>
+          <span style="font-family:var(--font-mono);font-size:11px;color:${isPro?'var(--text)':'var(--text-muted)'}">${isPro?'مزامنة سحابية نشطة':'بيانات محلية فقط'}</span>
+        </div>
+        ${isPro ? `<button onclick="syncToCloud().then(()=>showToast('✓ تمت المزامنة'))" style="background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.3);color:var(--gold);border-radius:8px;padding:5px 12px;font-family:var(--font-mono);font-size:11px;cursor:pointer">مزامنة الآن</button>` : ''}
+      </div>
+
+      ${isPro ? `
+      <button onclick="logoutCode()" style="width:100%;background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.2);color:var(--red);border-radius:10px;padding:11px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px">تسجيل الخروج من الحساب</button>` : `
+      <button onclick="document.getElementById('code-screen').classList.add('open')" style="width:100%;background:var(--gold);border:none;color:#fff;border-radius:10px;padding:13px;font-family:var(--font-mono);font-size:13px;font-weight:700;cursor:pointer;letter-spacing:2px;box-shadow:0 0 16px var(--glow)">🔑 دخول بكود Pro</button>`}
+    </div>
+
+    <!-- Stats -->
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold);letter-spacing:3px;margin-bottom:12px">// إحصائيات_الحساب</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+      ${[
+        ['🏋️', totalWorkouts, 'تمرين مسجل'],
+        ['📦', totalSets, 'سيت منجز'],
+        ['🏆', totalPRs, 'رقم قياسي'],
+        ['⚖️', Math.round(totalVol/1000*10)/10 + 'k', 'كجم حجم كلي'],
+      ].map(([ic,n,l]) => `
+        <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:22px;margin-bottom:6px">${ic}</div>
+          <div style="font-family:var(--font-mono);font-size:24px;font-weight:700;color:var(--gold);text-shadow:0 0 10px var(--glow)">${n}</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:3px;letter-spacing:1px">${l}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- Account Info -->
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold);letter-spacing:3px;margin-bottom:12px">// معلومات_الحساب</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px">
+      ${[
+        ['📅 أول تمرين', firstWorkout || 'لسه ما بدأتش'],
+        ['🏢 الجيمات', gyms.length + ' جيم'],
+        ['📋 البرامج', (state.programs||[]).length + ' برنامج'],
+        ['📍 النظام النشط', getActiveProgram()?.name || 'PPL'],
+      ].map(([label, val], i, arr) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;${i<arr.length-1?'border-bottom:1px solid var(--border)':''}">
+          <span style="font-size:13px;color:var(--text-dim)">${label}</span>
+          <span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--text)">${val}</span>
+        </div>`).join('')}
+    </div>
+
+    <!-- Danger Zone -->
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);letter-spacing:3px;margin-bottom:12px">// منطقة_الخطر</div>
+    <div style="background:rgba(248,81,73,0.05);border:1px solid rgba(248,81,73,0.15);border-radius:12px;padding:14px">
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;font-weight:300;line-height:1.6">حذف كل البيانات المحلية — ${isPro?'بياناتك على السيرفر هتفضل محفوظة':'هيتحذف كل حاجة نهائياً'}</div>
+      <button onclick="clearAllLocalData()" style="width:100%;background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);color:var(--red);border-radius:10px;padding:12px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px">🗑 مسح البيانات المحلية</button>
+    </div>`;
+}
+
+function clearAllLocalData() {
+  const msg = isPro
+    ? 'هيتمسح البيانات المحلية بس — بياناتك على السيرفر هتفضل محفوظة. متأكد؟'
+    : '⚠️ هيتمسح كل حاجة نهائياً! مفيش رجوع. متأكد؟';
+  if (!confirm(msg)) return;
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('tamreeni_'));
+  keys.forEach(k => localStorage.removeItem(k));
+  if (isPro) {
+    // احتفظ بالكود فقط
+    localStorage.setItem('tamreeni_code', currentCode);
+    showToast('✓ تم المسح — جاري إعادة التحميل');
+    setTimeout(() => location.reload(), 1000);
+  } else {
+    showToast('✓ تم مسح كل البيانات');
+    setTimeout(() => location.reload(), 1000);
+  }
+}
 
 // ============================================================
 // PROGRAMS
