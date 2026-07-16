@@ -7,9 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>تمرينتي — سجّل تمرينك</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Barlow+Condensed:wght@300;400;500;600;700&family=Cairo:wght@300;400;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
@@ -44,6 +45,18 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+/* ── LITE MODE: أجهزة ضعيفة — يقفل التأثيرات الثقيلة للأداء الأسلس ── */
+html.lite *, html.lite *::before, html.lite *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}
+html.lite .workout-header-bar,
+html.lite #rest-modal {
+  backdrop-filter: none !important;
+}
 
 html, body {
   background: var(--bg);
@@ -93,31 +106,36 @@ body::before {
   display: flex;
   background: var(--bg2);
   border-top: 1px solid var(--border);
-  padding: 6px 8px env(safe-area-inset-bottom, 8px);
+  padding: 6px 4px env(safe-area-inset-bottom, 8px);
   z-index: 100;
   flex-shrink: 0;
-  gap: 4px;
+  gap: 1px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
+#nav::-webkit-scrollbar { display: none; }
 
 .nav-btn {
-  flex: 1;
+  flex: 1 0 auto;
+  min-width: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 6px 4px 5px;
+  gap: 3px;
+  padding: 6px 2px 5px;
   background: none;
   border: none;
   color: var(--text-muted);
   cursor: pointer;
   transition: all .2s;
-  font-size: 9px;
+  font-size: 8px;
   font-family: var(--font-mono);
   font-weight: 600;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   text-transform: uppercase;
   border-radius: 10px;
   position: relative;
+  white-space: nowrap;
 }
 
 .nav-btn:active { transform: scale(0.93); }
@@ -140,7 +158,7 @@ body::before {
   box-shadow: 0 0 8px var(--gold);
 }
 
-.nav-btn svg { width: 24px; height: 24px; stroke-width: 1.8; }
+.nav-btn svg { width: 20px; height: 20px; stroke-width: 1.8; }
 
 /* ===== PAGES ===== */
 .page { display: none; padding: 16px; }
@@ -2239,144 +2257,16 @@ body::before {
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="TRAINER">
 <meta name="mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" id="apple-icon" href="">
-<link rel="manifest" id="pwa-manifest" href="">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
 <script>
-// Generate icons & manifest dynamically from embedded logo
+// PWA: register real service worker + auto-update
+var _swReg = null;
 (function() {
-  const b64 = ""; // loaded from file
-  const dataUrl = "img-avatar.png";
-  
-  // Set apple-touch-icon
-  document.getElementById('apple-icon').href = dataUrl;
-  
-  // Build manifest blob
-  const manifest = {
-    name: "تمرينتي",
-    short_name: "تمرينتي",
-    description: "أول تطبيق تتبع تمرين عربي",
-    start_url: "./",
-    display: "standalone",
-    orientation: "portrait",
-    background_color: "#04070F",
-    theme_color: "#04070F",
-    icons: [
-      { src: dataUrl, sizes: "192x192", type: "image/png", purpose: "any maskable" },
-      { src: dataUrl, sizes: "512x512", type: "image/png", purpose: "any maskable" }
-    ]
-  };
-  const blob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
-  const url = URL.createObjectURL(blob);
-  document.getElementById('pwa-manifest').href = url;
-  
-  // Register service worker inline via blob
   if ('serviceWorker' in navigator) {
-    const swCode = `
-const CACHE = 'tamreeni-v1';
-const APP_VERSION = '1.0.0';
-
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll([]))
-  );
-});
-
-self.addEventListener('activate', e => {
-  // حذف كل الـ caches القديمة
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', e => {
-  // Navigation requests (الصفحة نفسها) — Network First دايماً
-  if (e.request.mode === 'navigate') {
-    e.respondWith(
-      fetch(e.request).then(res => {
-        // حفظ النسخة الجديدة في الـ cache
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-        return res;
-      }).catch(() => caches.match(e.request))
-    );
-    return;
-  }
-
-  // باقي الملفات — Network First مع Cache fallback
-  e.respondWith(
-    fetch(e.request).then(res => {
-      if (res.ok) {
-        const clone = res.clone();
-        caches.open(CACHE).then(c => c.put(e.request, clone));
-      }
-      return res;
-    }).catch(() => caches.match(e.request))
-  );
-});
-
-self.addEventListener('message', e => {
-  if (!e.data) return;
-
-  // Check for updates
-  if (e.data.type === 'CHECK_UPDATE') {
-    self.registration.update();
-  }
-
-  if (e.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-
-  if (e.data.type === 'START_REST') {
-    if (restTimer) { clearTimeout(restTimer); restTimer = null; }
-    const ms = e.data.seconds * 1000;
-    const icon = e.data.icon || '';
-    restTimer = setTimeout(() => {
-      restTimer = null;
-      self.clients.matchAll().then(clients => {
-        clients.forEach(c => c.postMessage({ type: 'REST_DONE' }));
-      });
-      self.registration.showNotification('تمرينتي 💪', {
-        body: 'انتهى وقت الراحة — ابدأ السيت الجديد!',
-        icon,
-        badge: icon,
-        vibrate: [300, 100, 300, 100, 300],
-        tag: 'rest-done',
-        renotify: true,
-        requireInteraction: true,
-        silent: false,
-        actions: [{ action: 'ok', title: '✓ جاهز' }]
-      });
-    }, ms);
-  }
-
-  if (e.data.type === 'CANCEL_REST') {
-    if (restTimer) { clearTimeout(restTimer); restTimer = null; }
-  }
-
-  if (e.data.type === 'CACHE_PAGE') {
-    caches.open(CACHE).then(c => c.add(e.data.url));
-  }
-});
-
-let restTimer = null;
-
-self.addEventListener('notificationclick', e => {
-  e.notification.close();
-  e.waitUntil(self.clients.matchAll({ type: 'window' }).then(clients => {
-    if (clients.length) clients[0].focus();
-    else self.clients.openWindow('./');
-  }));
-});
-`;
-    const swBlob = new Blob([swCode], {type:'application/javascript'});
-    const swUrl = URL.createObjectURL(swBlob);
-    navigator.serviceWorker.register(swUrl, {scope: './'}).then(reg => {
+    navigator.serviceWorker.register('sw.js', {scope: './'}).then(reg => {
       _swReg = reg;
 
-      // لما يلاقي service worker جديد — يعرض notification للتحديث
       reg.addEventListener('updatefound', () => {
         const newWorker = reg.installing;
         newWorker.addEventListener('statechange', () => {
@@ -2390,11 +2280,22 @@ self.addEventListener('notificationclick', e => {
       requestNotifPermission();
     }).catch(()=>{});
 
-    // لو اتغير الـ controller (يعني تحديث اتطبق) — reload
+    // لو اتغير الـ controller (يعني تحديث اتطبق) — reload أوتوماتيك
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) { refreshing = true; location.reload(); }
     });
+  }
+})();
+</script>
+<script>
+// كشف الأجهزة الضعيفة — يقفل الأنيميشن الثقيلة عشان الأداء يفضل سلس
+(function() {
+  const mem = navigator.deviceMemory || 4;
+  const cores = navigator.hardwareConcurrency || 4;
+  const prefersReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (mem <= 3 || cores <= 4 || prefersReduced) {
+    document.documentElement.classList.add('lite');
   }
 })();
 </script>
@@ -2598,31 +2499,35 @@ self.addEventListener('notificationclick', e => {
 
   </div><!-- end #content -->
   <nav id="nav">
-    <button class="nav-btn active" onclick="navigate('dash')">
+    <button class="nav-btn active" data-page="dash" onclick="navigate('dash')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
       داشبورد
     </button>
-    <button class="nav-btn" onclick="navigate('workout')">
+    <button class="nav-btn" data-page="workout" onclick="navigate('workout')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11M6.5 17.5h11M4 12h2m12 0h2M6 9.5V14.5M18 9.5V14.5"/></svg>
       تمارين
     </button>
-    <button class="nav-btn" onclick="navigate('programs')">
+    <button class="nav-btn" data-page="library" onclick="navigate('library')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      مكتبة
+    </button>
+    <button class="nav-btn" data-page="programs" onclick="navigate('programs')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
       برامج
     </button>
-    <button class="nav-btn" onclick="navigate('progress')">
+    <button class="nav-btn" data-page="progress" onclick="navigate('progress')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       تقدم
     </button>
-    <button class="nav-btn" onclick="navigate('log')">
+    <button class="nav-btn" data-page="log" onclick="navigate('log')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       سجل
     </button>
-    <button class="nav-btn" onclick="navigate('gyms')">
+    <button class="nav-btn" data-page="gyms" onclick="navigate('gyms')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       الجيم
     </button>
-    <button class="nav-btn" onclick="navigate('account')">
+    <button class="nav-btn" data-page="account" onclick="navigate('account')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       حسابي
     </button>
@@ -3512,9 +3417,8 @@ function navigate(page) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const pageEl = document.getElementById('page-' + page);
   if (pageEl) { pageEl.style.display = 'block'; pageEl.classList.add('active'); }
-  const navPages = ['dash','workout','library','progress','log','gyms'];
-  const idx = navPages.indexOf(page);
-  if (idx !== -1) document.querySelectorAll('.nav-btn')[idx].classList.add('active');
+  const activeBtn = document.querySelector('.nav-btn[data-page="' + page + '"]');
+  if (activeBtn) activeBtn.classList.add('active');
   if (page === 'dash') renderDash();
   if (page === 'workout') renderPPL();
   if (page === 'library') renderLibrary();
@@ -5036,7 +4940,7 @@ loadCustomExercises();
   // Set avatar image from IMAGES object (defined later) — use a small delay
   setTimeout(() => {
     const av = document.getElementById('loading-avatar');
-    av.style.backgroundImage = 'url(img-avatar.png)';
+    av.style.backgroundImage = 'url(icon-192.png)';
   }, 0);
 
   const bar = document.getElementById('loading-bar');
@@ -5507,7 +5411,6 @@ function showAIError(msg) {
 }
 
 // ── NOTIFICATIONS ──
-let _swReg = null;
 
 function sendToSW(msg) {
   if (_swReg && _swReg.active) { _swReg.active.postMessage(msg); return; }
@@ -6204,17 +6107,15 @@ window.confirmAddGym = function() {
 // ── Update navigate to handle new pages ──
 const _origNavigate = navigate;
 window.navigate = function(page) {
-  const allPages = ['dash','workout','programs','progress','log','gyms','account','coach'];
   document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   const pageEl = document.getElementById('page-' + page);
   if (pageEl) { pageEl.style.display = 'block'; pageEl.classList.add('active'); }
-  // Nav buttons: dash, workout, programs, progress, log, gyms, account, coach(openCoach)
-  const navBtns = document.querySelectorAll('.nav-btn');
-  const navMap = { dash:0, workout:1, programs:2, progress:3, log:4, gyms:5, account:6 };
-  if (navMap[page] !== undefined && navBtns[navMap[page]]) navBtns[navMap[page]].classList.add('active');
+  const activeBtn = document.querySelector('.nav-btn[data-page="' + page + '"]');
+  if (activeBtn) activeBtn.classList.add('active');
   if (page === 'dash')     renderDash();
   if (page === 'workout')  renderPPL();
+  if (page === 'library')  renderLibrary();
   if (page === 'progress') renderProgress();
   if (page === 'log')      renderLog();
   if (page === 'gyms')     renderGymsSettings();
