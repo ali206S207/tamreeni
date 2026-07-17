@@ -6130,7 +6130,19 @@ function confirmFirstGym() {
 // ============================================================
 const SUPA_URL = 'https://hukkzltmouigzsnqruxp.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1a2t6bHRtb3VpZ3pzbnFydXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDA2MTksImV4cCI6MjA5NTMxNjYxOX0.yW3KkhzYF1Hv20DYZfv9Vfdb1InRD_FieH-GMnH94AA';
-const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// دفاعي: لو مكتبة Supabase اتأخرت/فشلت تتحمل (نت ضعيف، ad-blocker...) التطبيق
+// المحلي (تمارين، سجل، برامج) لازم يفضل شغال عادي، مش ينهار بالكامل.
+let supa = null;
+try {
+  if (typeof supabase !== 'undefined') {
+    supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+  } else {
+    console.warn('Supabase SDK لم يتحمّل — هتشتغل بوضع محلي فقط (بدون مزامنة Pro)');
+  }
+} catch (e) {
+  console.warn('فشل تهيئة Supabase — هتشتغل بوضع محلي فقط', e);
+}
 
 const FREE_GYM_LIMIT = 3;
 let currentCode = null;
@@ -6174,11 +6186,15 @@ async function submitCode() {
   localStorage.setItem('tamreeni_code', currentCode);
 
   // هل عنده بيانات على السيرفر؟
-  const { data: cloudData } = await supa
-    .from('tamreeni_users')
-    .select('code, updated_at')
-    .eq('code', currentCode)
-    .single();
+  let cloudData = null;
+  try {
+    const res = await supa
+      .from('tamreeni_users')
+      .select('code, updated_at')
+      .eq('code', currentCode)
+      .single();
+    cloudData = res.data;
+  } catch (e) { /* السيرفر مش متاح دلوقتي — نكمل محلي */ }
 
   const hasLocalData = gyms.length > 0 || state.log.length > 0 || Object.keys(state.prs).length > 0;
   const hasCloudData = !!cloudData;
