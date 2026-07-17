@@ -4251,33 +4251,53 @@ function getLastSetsForExercise(exId) {
 }
 
 function startWorkout(ppl, di) {
-  const day = state.schedule[ppl][di];
-  const exercises = day.exercises.map(id => EXERCISES_DB.find(e => e.id === id)).filter(Boolean);
-  
-  activeWorkout = {
-    ppl, di,
-    type: day.day,
-    exercises: exercises.map(ex => ({
-      id: ex.id,
-      name: ex.nameAr || ex.name,
-      muscle: ex.muscle,
-      gif: ex.gif || '',
-      sets: getLastSetsForExercise(ex.id)
-    }))
-  };
+  try {
+    if (!state.schedule || !state.schedule[ppl] || !state.schedule[ppl][di]) {
+      console.error('startWorkout: missing schedule/day', { ppl, di, schedule: state.schedule });
+      appAlert('حصلت مشكلة في تحميل بيانات اليوم ده. جرب تعمل تحديث للصفحة (Refresh) وحاول تاني.');
+      return;
+    }
 
-  workoutStartTime = Date.now();
-  state.activeWorkout = activeWorkout;
-  state.workoutStartTime = workoutStartTime;
-  saveState();
+    const day = state.schedule[ppl][di];
+    if (!Array.isArray(day.exercises)) day.exercises = [];
 
-  document.getElementById('active-workout').classList.add('open');
-  document.getElementById('aw-title').textContent = '// ' + ppl.toUpperCase();
-  document.getElementById('aw-day').textContent = day.day;
-  
-  renderActiveExercises();
-  startWorkoutTimer();
-  updateWorkoutStats();
+    const exercises = day.exercises
+      .map(id => EXERCISES_DB.find(e => e.id === id))
+      .filter(Boolean);
+
+    if (exercises.length === 0) {
+      appAlert('اليوم ده لسه ملوش تمارين. ضيف تمارين الأول من زرار التعديل بجانب اسم اليوم.');
+      return;
+    }
+
+    activeWorkout = {
+      ppl, di,
+      type: day.day,
+      exercises: exercises.map(ex => ({
+        id: ex.id,
+        name: ex.nameAr || ex.name,
+        muscle: ex.muscle,
+        gif: ex.gif || '',
+        sets: getLastSetsForExercise(ex.id)
+      }))
+    };
+
+    workoutStartTime = Date.now();
+    state.activeWorkout = activeWorkout;
+    state.workoutStartTime = workoutStartTime;
+    saveState();
+
+    document.getElementById('active-workout').classList.add('open');
+    document.getElementById('aw-title').textContent = '// ' + ppl.toUpperCase();
+    document.getElementById('aw-day').textContent = day.day;
+
+    renderActiveExercises();
+    startWorkoutTimer();
+    updateWorkoutStats();
+  } catch (err) {
+    console.error('startWorkout error:', err);
+    appAlert('حصل خطأ وإحنا بنجهز التمرين: ' + (err && err.message ? err.message : 'unknown error'));
+  }
 }
 
 function updateWorkoutStats() {
