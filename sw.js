@@ -1,6 +1,6 @@
 // تمرينتي — Service Worker
 // لما تعمل أي تحديث في الكود: زوّد رقم CACHE_VERSION عشان المستخدمين ياخدوا التحديث أوتوماتيك
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const CACHE = 'tamreeni-' + CACHE_VERSION;
 
 const APP_SHELL = [
