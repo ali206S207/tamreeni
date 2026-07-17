@@ -2771,6 +2771,16 @@ var _swReg = null;
   <button class="finish-workout-btn" onclick="finishWorkout()">⚡ إنهاء التمرين</button>
 </div>
 
+<!-- APP DIALOG (بديل alert/confirm/prompt المتصفح) -->
+<div id="app-dialog-modal" onclick="if(event.target===this) resolveAppDialog(null)" style="display:none;position:fixed;inset:0;z-index:10000;background:rgba(4,7,15,0.85);align-items:center;justify-content:center;backdrop-filter:blur(6px)">
+  <div style="width:min(88vw,340px);background:var(--bg2);border:1px solid var(--border-bright);border-radius:16px;padding:20px;box-shadow:0 0 40px rgba(245,200,66,0.12)">
+    <div id="app-dialog-icon" style="font-size:26px;text-align:center;margin-bottom:8px"></div>
+    <div id="app-dialog-message" style="font-family:var(--font-main);font-size:14px;text-align:center;line-height:1.7;white-space:pre-line"></div>
+    <input id="app-dialog-input" class="search-input" style="display:none;margin-top:14px;margin-bottom:0;text-align:center">
+    <div id="app-dialog-actions" style="display:flex;gap:8px;margin-top:16px"></div>
+  </div>
+</div>
+
 <!-- EXERCISE GIF MODAL -->
 <div id="ex-gif-modal" onclick="if(event.target===this) closeExGifModal()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(4,7,15,0.94);align-items:center;justify-content:center;backdrop-filter:blur(6px)">
   <div style="position:relative;width:min(92vw,380px);background:var(--bg2);border:1px solid var(--border-bright);border-radius:16px;overflow:hidden;box-shadow:0 0 40px rgba(245,200,66,0.15)">
@@ -3693,9 +3703,9 @@ function renderPPL() {
   }).join('');
 }
 
-function editDayName(ppl, di) {
+async function editDayName(ppl, di) {
   const current = state.schedule[ppl][di].day;
-  const newName = prompt('اسم اليوم الجديد:', current);
+  const newName = await appPrompt('اسم اليوم الجديد:', current);
   if (!newName || !newName.trim() || newName.trim() === current) return;
   state.schedule[ppl][di].day = newName.trim();
   // لو البرنامج النشط — حدّث dayNames فيه
@@ -4029,9 +4039,9 @@ function confirmAddGym() {
   renderGymsSettings();
 }
 
-function deleteGym(gymId) {
+async function deleteGym(gymId) {
   if (gymId === activeGymId) return; // can't delete active gym
-  if (!confirm('هل تريد حذف هذا الجيم وكل بياناته؟')) return;
+  if (!await appConfirmDanger('هل تريد حذف هذا الجيم وكل بياناته؟')) return;
   gyms = gyms.filter(g => g.id !== gymId);
   saveGyms();
   localStorage.removeItem('tamreeni_state_' + gymId);
@@ -4520,8 +4530,8 @@ function startWorkoutTimer() {
   }, 1000);
 }
 
-function stopWorkout() {
-  if (confirm('إيقاف التمرين؟ لن يتم حفظه.')) {
+async function stopWorkout() {
+  if (await appConfirm('إيقاف التمرين؟ لن يتم حفظه.')) {
     clearInterval(workoutTimerInterval);
     closeRestTimer();
     activeWorkout = null;
@@ -4786,8 +4796,8 @@ function renderLog() {
   `).join('');
 }
 
-function clearLog() {
-  if (confirm('هل أنت متأكد من مسح كل السجلات؟')) {
+async function clearLog() {
+  if (await appConfirmDanger('هل أنت متأكد من مسح كل السجلات؟')) {
     state.log = [];
     saveState();
     renderLog();
@@ -5130,10 +5140,10 @@ function openWeightModal() {
   document.getElementById('weight-modal').classList.add('open');
 }
 
-function saveBodyWeight() {
+async function saveBodyWeight() {
   const val = parseFloat(document.getElementById('bw-input').value);
   const date = document.getElementById('bw-date').value;
-  if (!val || val < 20 || val > 300) { alert('أدخل وزن صحيح'); return; }
+  if (!val || val < 20 || val > 300) { appAlert('أدخل وزن صحيح'); return; }
   state.bodyWeights = state.bodyWeights || [];
   const existing = state.bodyWeights.findIndex(b => b.date === date);
   if (existing !== -1) state.bodyWeights[existing].weight = val;
@@ -5540,11 +5550,11 @@ function saveCustomExercise() {
   const equipment = document.getElementById('cex-equipment').value.trim() || type;
 
   if (!nameAr && !nameEn) {
-    alert('اكتب اسم التمرين على الأقل');
+    appAlert('اكتب اسم التمرين على الأقل');
     return;
   }
   if (!muscle) {
-    alert('اختر العضلة أو اكتبها');
+    appAlert('اختر العضلة أو اكتبها');
     return;
   }
 
@@ -5639,6 +5649,55 @@ setInterval(() => {
 }, 30 * 60 * 1000);
 
 // ── AI COACH ──
+// ============================================================
+// APP DIALOG — بديل alert/confirm/prompt بتاعة المتصفح
+// ============================================================
+let _dialogResolve = null;
+
+function _showAppDialog(type, message, defaultValue) {
+  return new Promise(resolve => {
+    _dialogResolve = resolve;
+    const icons = { alert: '💡', confirm: '❓', danger: '⚠️', prompt: '✏️' };
+    document.getElementById('app-dialog-icon').textContent = icons[type] || '';
+    document.getElementById('app-dialog-message').textContent = message;
+
+    const input = document.getElementById('app-dialog-input');
+    const actions = document.getElementById('app-dialog-actions');
+
+    if (type === 'prompt') {
+      input.style.display = 'block';
+      input.value = defaultValue || '';
+      setTimeout(() => input.focus(), 150);
+    } else {
+      input.style.display = 'none';
+    }
+
+    if (type === 'confirm' || type === 'danger') {
+      actions.innerHTML = `
+        <button class="btn btn-outline btn-full" style="padding:11px" onclick="resolveAppDialog(false)">إلغاء</button>
+        <button class="btn ${type==='danger'?'':'btn-gold'} btn-full" style="padding:11px${type==='danger'?';background:rgba(224,48,48,0.12);border:1px solid var(--red);color:var(--red)':''}" onclick="resolveAppDialog(true)">تأكيد</button>`;
+    } else if (type === 'prompt') {
+      actions.innerHTML = `
+        <button class="btn btn-outline btn-full" style="padding:11px" onclick="resolveAppDialog(null)">إلغاء</button>
+        <button class="btn btn-gold btn-full" style="padding:11px" onclick="resolveAppDialog(document.getElementById('app-dialog-input').value)">تم</button>`;
+    } else {
+      actions.innerHTML = `<button class="btn btn-gold btn-full" style="padding:11px" onclick="resolveAppDialog(true)">تمام</button>`;
+    }
+
+    document.getElementById('app-dialog-modal').style.display = 'flex';
+  });
+}
+
+function resolveAppDialog(val) {
+  document.getElementById('app-dialog-modal').style.display = 'none';
+  if (_dialogResolve) { const r = _dialogResolve; _dialogResolve = null; r(val); }
+}
+
+function appAlert(msg)          { return _showAppDialog('alert', msg); }
+function appConfirm(msg)        { return _showAppDialog('confirm', msg); }
+function appConfirmDanger(msg)  { return _showAppDialog('danger', msg); }
+function appPrompt(msg, def)    { return _showAppDialog('prompt', msg, def); }
+
 // ============================================================
 // EXERCISE GIF MODAL
 // ============================================================
@@ -6072,7 +6131,7 @@ async function submitCode() {
     // عنده بيانات على السيرفر — حملها
     if (hasLocalData) {
       // الاتنين فيهم بيانات — اسأل المستخدم
-      const useCloud = confirm('عندك بيانات على السيرفر — تحمّل بيانات حسابك؟\n(موافق = بيانات السيرفر، إلغاء = بياناتك الحالية)');
+      const useCloud = await appConfirm('عندك بيانات على السيرفر — تحمّل بيانات حسابك؟\n(تأكيد = بيانات السيرفر، إلغاء = بياناتك الحالية)');
       if (useCloud) {
         await loadUserDataFromCloud();
         showToast('✓ تم تحميل بيانات حسابك');
@@ -6098,8 +6157,8 @@ function continueAsFree() {
   showToast('تمرينتي Free — 3 جيمات كحد أقصى');
 }
 
-function logoutCode() {
-  if (!confirm('هتخرج من حسابك — بياناتك محفوظة على السيرفر')) return;
+async function logoutCode() {
+  if (!await appConfirm('هتخرج من حسابك — بياناتك محفوظة على السيرفر')) return;
   currentCode = null; isPro = false;
   localStorage.removeItem('tamreeni_code');
   showToast('تم تسجيل الخروج');
@@ -6308,11 +6367,11 @@ function renderAccount() {
     </div>`;
 }
 
-function clearAllLocalData() {
+async function clearAllLocalData() {
   const msg = isPro
     ? 'هيتمسح البيانات المحلية بس — بياناتك على السيرفر هتفضل محفوظة. متأكد؟'
     : '⚠️ هيتمسح كل حاجة نهائياً! مفيش رجوع. متأكد؟';
-  if (!confirm(msg)) return;
+  if (!await appConfirmDanger(msg)) return;
   const keys = Object.keys(localStorage).filter(k => k.startsWith('tamreeni_'));
   keys.forEach(k => localStorage.removeItem(k));
   if (isPro) {
@@ -6400,10 +6459,10 @@ function saveProgram() {
   showToast('✓ تم حفظ البرنامج — ' + name);
 }
 
-function applyProgram(progId) {
+async function applyProgram(progId) {
   const prog = (state.programs || []).find(p => p.id === progId);
   if (!prog) return;
-  if (!confirm(`تطبيق برنامج "${prog.name}"؟\nده هيغير جدول التمارين الحالي.`)) return;
+  if (!await appConfirm(`تطبيق برنامج "${prog.name}"؟\nده هيغير جدول التمارين الحالي.`)) return;
   const dayNames = prog.dayNames || Array.from({length: prog.days}, (_, i) => `يوم ${i+1}`);
   state.schedule = buildScheduleFromDays(dayNames);
   state.programs.forEach(p => p.active = p.id === progId);
@@ -6530,9 +6589,9 @@ function toggleReadyProgramExpand(id) {
   if (id !== activeProgramId) el.style.display = isOpen ? 'none' : 'block';
 }
 
-function deleteProgram(id) {
+async function deleteProgram(id) {
   const prog = (state.programs||[]).find(p => p.id === id);
-  if (!confirm('هل تريد حذف هذا البرنامج؟')) return;
+  if (!await appConfirmDanger('هل تريد حذف هذا البرنامج؟')) return;
   if (prog?.active) {
     state.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
     showToast('رجع للـ PPL الافتراضي');
