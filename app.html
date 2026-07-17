@@ -5445,6 +5445,7 @@ function requestNotifPermission() {
 // ── CUSTOM EXERCISES ──
 let selectedMuscle = '';
 let selectedType = '';
+let pendingCustomGifUrl = '';
 
 function openAddExModal() {
   // Reset form
@@ -5454,9 +5455,67 @@ function openAddExModal() {
   document.getElementById('cex-equipment').value = '';
   selectedMuscle = '';
   selectedType = '';
+  pendingCustomGifUrl = '';
   document.querySelectorAll('.muscle-opt').forEach(el => el.classList.remove('selected'));
   document.querySelectorAll('.type-opt').forEach(el => el.classList.remove('selected'));
+  renderCexGifSection();
   document.getElementById('add-ex-modal').classList.add('open');
+}
+
+function renderCexGifSection() {
+  const el = document.getElementById('cex-gif-section');
+  if (!el) return;
+
+  if (!isPro) {
+    el.innerHTML = `
+      <div style="background:rgba(245,200,66,0.06);border:1px solid var(--border-bright);border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:22px;margin-bottom:6px">🎬🔒</div>
+        <div style="font-family:var(--font-main);font-size:13px;font-weight:700;margin-bottom:4px">إضافة GIF للتمرين — مميزة Pro</div>
+        <div style="font-family:var(--font-mono);font-size:10.5px;color:var(--text-muted);margin-bottom:10px;line-height:1.6">وثّق تمرينك المخصص بصورة متحركة توضح الحركة صح</div>
+        <button type="button" onclick="closeModal('add-ex-modal');document.getElementById('code-screen').classList.add('open')" style="background:var(--gold);border:none;color:#000;border-radius:8px;padding:8px 16px;font-family:var(--font-main);font-size:12px;font-weight:700;cursor:pointer">ترقية Pro</button>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">GIF التمرين (اختياري) — Pro 🎬</div>
+    <div id="cex-gif-preview" style="${pendingCustomGifUrl ? '' : 'display:none'};margin-bottom:8px;border-radius:10px;overflow:hidden;background:#fff;aspect-ratio:1/1;max-width:160px">
+      ${pendingCustomGifUrl ? `<img src="${pendingCustomGifUrl}" style="width:100%;height:100%;object-fit:contain">` : ''}
+    </div>
+    <label style="display:flex;align-items:center;justify-content:center;gap:8px;border:1px dashed var(--border-bright);border-radius:10px;padding:12px;cursor:pointer;font-family:var(--font-mono);font-size:11px;color:var(--gold)" id="cex-gif-label">
+      <span id="cex-gif-label-text">📤 ارفع GIF أو صورة توضيحية</span>
+      <input type="file" accept="image/gif,image/webp,image/png,image/jpeg" style="display:none" onchange="uploadCustomExerciseGif(this)">
+    </label>
+  `;
+}
+
+async function uploadCustomExerciseGif(input) {
+  if (!isPro) { showToast('الميزة دي لأعضاء Pro'); return; }
+  const file = input.files && input.files[0];
+  if (!file) return;
+
+  if (file.size > 8 * 1024 * 1024) {
+    showToast('حجم الملف كبير — الحد الأقصى 8MB');
+    return;
+  }
+
+  const labelText = document.getElementById('cex-gif-label-text');
+  if (labelText) labelText.textContent = '⏳ جاري الرفع...';
+
+  try {
+    const ext = (file.name.split('.').pop() || 'gif').toLowerCase();
+    const path = `${currentCode || 'guest'}/${Date.now()}.${ext}`;
+    const { error } = await supa.storage.from('custom-exercise-gifs').upload(path, file, { upsert: true });
+    if (error) throw error;
+    const { data } = supa.storage.from('custom-exercise-gifs').getPublicUrl(path);
+    pendingCustomGifUrl = data.publicUrl;
+    renderCexGifSection();
+    showToast('✓ تم رفع الصورة');
+  } catch (err) {
+    console.error(err);
+    if (labelText) labelText.textContent = '📤 ارفع GIF أو صورة توضيحية';
+    showToast('حصل خطأ في الرفع — حاول تاني');
+  }
 }
 
 function pickMuscle(el) {
@@ -5498,6 +5557,7 @@ function saveCustomExercise() {
     equipment,
     custom: true
   };
+  if (isPro && pendingCustomGifUrl) newEx.gif = pendingCustomGifUrl;
 
   // Add to runtime DB
   EXERCISES_DB.push(newEx);
@@ -5588,8 +5648,9 @@ function openExGif(ei) {
   openExGifDirect(ex.gif, ex.name);
 }
 function openExGifDirect(gif, name) {
+  const src = /^https?:\/\//.test(gif) ? gif : `gifs/${gif}`;
   const frame = document.getElementById('ex-gif-frame');
-  frame.innerHTML = `<img src="gifs/${gif}" loading="lazy" alt="${name}" style="width:100%;height:100%;object-fit:contain;background:#fff">`;
+  frame.innerHTML = `<img src="${src}" loading="lazy" alt="${name}" style="width:100%;height:100%;object-fit:contain;background:#fff">`;
   document.getElementById('ex-gif-title').textContent = name || '';
   document.getElementById('ex-gif-modal').style.display = 'flex';
 }
@@ -6611,6 +6672,8 @@ window.renderDash = function() {
       <div style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">الجهاز / المعدة</div>
       <input type="text" id="cex-equipment" class="search-input" style="margin-bottom:0" placeholder="مثال: Barbell, Dumbbell, Machine...">
     </div>
+
+    <div style="margin-bottom:16px" id="cex-gif-section"></div>
 
     <div style="display:flex;gap:8px">
       <button class="btn btn-gold btn-full" style="font-family:var(--font-main);font-size:15px;padding:14px;letter-spacing:1px" onclick="saveCustomExercise()">حفظ التمرين ✓</button>
