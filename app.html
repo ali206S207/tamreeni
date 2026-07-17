@@ -2771,6 +2771,17 @@ var _swReg = null;
   <button class="finish-workout-btn" onclick="finishWorkout()">⚡ إنهاء التمرين</button>
 </div>
 
+<!-- EXERCISE GIF MODAL -->
+<div id="ex-gif-modal" onclick="if(event.target===this) closeExGifModal()" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(4,7,15,0.94);align-items:center;justify-content:center;backdrop-filter:blur(6px)">
+  <div style="position:relative;width:min(92vw,380px);background:var(--bg2);border:1px solid var(--border-bright);border-radius:16px;overflow:hidden;box-shadow:0 0 40px rgba(245,200,66,0.15)">
+    <button onclick="closeExGifModal()" style="position:absolute;top:10px;left:10px;z-index:2;width:30px;height:30px;border-radius:50%;background:rgba(0,0,0,0.55);border:1px solid var(--border-bright);color:var(--gold);font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer">✕</button>
+    <div id="ex-gif-frame" style="width:100%;aspect-ratio:1/1;background:#000;display:flex;align-items:center;justify-content:center">
+      <div style="color:var(--text-muted);font-family:var(--font-mono);font-size:11px">جاري التحميل...</div>
+    </div>
+    <div id="ex-gif-title" style="padding:12px 14px;font-family:var(--font-main);font-weight:700;font-size:14px;text-align:center"></div>
+  </div>
+</div>
+
 <!-- REST TIMER MODAL -->
 <div id="rest-modal">
   <!-- SVG gradient def -->
@@ -2957,100 +2968,100 @@ var _swReg = null;
 // ============================================================
 const EXERCISES_DB = [
   // CHEST
-  {id:'e1',name:'Bench Press',nameAr:'بنش بريس',muscle:'Chest',type:'Barbell',equipment:'Barbell'},
-  {id:'e2',name:'Incline Bench Press',nameAr:'بنش مائل علوي',muscle:'Chest',type:'Barbell',equipment:'Barbell'},
-  {id:'e3',name:'Decline Bench Press',nameAr:'بنش مائل سفلي',muscle:'Chest',type:'Barbell',equipment:'Barbell'},
-  {id:'e4',name:'Dumbbell Fly',nameAr:'فلاي دمبل',muscle:'Chest',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e5',name:'Incline Dumbbell Press',nameAr:'دمبل مائل علوي',muscle:'Chest',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e6',name:'Cable Crossover',nameAr:'كروسوفر كابل',muscle:'Chest',type:'Cable',equipment:'Cable Machine'},
+  {id:'e1',name:'Bench Press',nameAr:'بنش بريس',muscle:'Chest',type:'Barbell',equipment:'Barbell',gif:'EIeI8Vf.gif'},
+  {id:'e2',name:'Incline Bench Press',nameAr:'بنش مائل علوي',muscle:'Chest',type:'Barbell',equipment:'Barbell',gif:'3TZduzM.gif'},
+  {id:'e3',name:'Decline Bench Press',nameAr:'بنش مائل سفلي',muscle:'Chest',type:'Barbell',equipment:'Barbell',gif:'GrO65fd.gif'},
+  {id:'e4',name:'Dumbbell Fly',nameAr:'فلاي دمبل',muscle:'Chest',type:'Dumbbell',equipment:'Dumbbell',gif:'yz9nUhF.gif'},
+  {id:'e5',name:'Incline Dumbbell Press',nameAr:'دمبل مائل علوي',muscle:'Chest',type:'Dumbbell',equipment:'Dumbbell',gif:'ns0SIbU.gif'},
+  {id:'e6',name:'Cable Crossover',nameAr:'كروسوفر كابل',muscle:'Chest',type:'Cable',equipment:'Cable Machine',gif:'0CXGHya.gif'},
   {id:'e7',name:'Pec Deck',nameAr:'بيك ديك',muscle:'Chest',type:'Machine',equipment:'Machine'},
-  {id:'e8',name:'Push Up',nameAr:'ضغط أرضي',muscle:'Chest',type:'Bodyweight',equipment:'Bodyweight'},
-  {id:'e9',name:'Dips',nameAr:'ديبس',muscle:'Chest',type:'Bodyweight',equipment:'Dip Bar'},
+  {id:'e8',name:'Push Up',nameAr:'ضغط أرضي',muscle:'Chest',type:'Bodyweight',equipment:'Bodyweight',gif:'I4hDWkc.gif'},
+  {id:'e9',name:'Dips',nameAr:'ديبس',muscle:'Chest',type:'Bodyweight',equipment:'Dip Bar',gif:'X6C6i5Y.gif'},
   // SHOULDERS
-  {id:'e10',name:'Overhead Press',nameAr:'أوفرهيد بريس',muscle:'Shoulders',type:'Barbell',equipment:'Barbell'},
-  {id:'e11',name:'Dumbbell Shoulder Press',nameAr:'بريس دمبل',muscle:'Shoulders',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e12',name:'Lateral Raise',nameAr:'رفعات جانبية',muscle:'Shoulders',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e13',name:'Front Raise',nameAr:'رفعات أمامية',muscle:'Shoulders',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e14',name:'Face Pull',nameAr:'فيس بول',muscle:'Shoulders',type:'Cable',equipment:'Cable Machine'},
-  {id:'e15',name:'Upright Row',nameAr:'رو قائم',muscle:'Shoulders',type:'Barbell',equipment:'Barbell'},
-  {id:'e16',name:'Arnold Press',nameAr:'أرنولد بريس',muscle:'Shoulders',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e17',name:'Cable Lateral Raise',nameAr:'رفعات جانبية كابل',muscle:'Shoulders',type:'Cable',equipment:'Cable Machine'},
+  {id:'e10',name:'Overhead Press',nameAr:'أوفرهيد بريس',muscle:'Shoulders',type:'Barbell',equipment:'Barbell',gif:'kTbSH9h.gif'},
+  {id:'e11',name:'Dumbbell Shoulder Press',nameAr:'بريس دمبل',muscle:'Shoulders',type:'Dumbbell',equipment:'Dumbbell',gif:'znQUdHY.gif'},
+  {id:'e12',name:'Lateral Raise',nameAr:'رفعات جانبية',muscle:'Shoulders',type:'Dumbbell',equipment:'Dumbbell',gif:'DsgkuIt.gif'},
+  {id:'e13',name:'Front Raise',nameAr:'رفعات أمامية',muscle:'Shoulders',type:'Dumbbell',equipment:'Dumbbell',gif:'3eGE2JC.gif'},
+  {id:'e14',name:'Face Pull',nameAr:'فيس بول',muscle:'Shoulders',type:'Cable',equipment:'Cable Machine',gif:'wqNPGCg.gif'},
+  {id:'e15',name:'Upright Row',nameAr:'رو قائم',muscle:'Shoulders',type:'Barbell',equipment:'Barbell',gif:'UDlhcO8.gif'},
+  {id:'e16',name:'Arnold Press',nameAr:'أرنولد بريس',muscle:'Shoulders',type:'Dumbbell',equipment:'Dumbbell',gif:'Xy4jlWA.gif'},
+  {id:'e17',name:'Cable Lateral Raise',nameAr:'رفعات جانبية كابل',muscle:'Shoulders',type:'Cable',equipment:'Cable Machine',gif:'goJ6ezq.gif'},
   // TRICEPS
-  {id:'e18',name:'Tricep Pushdown',nameAr:'ترايسبس كابل',muscle:'Triceps',type:'Cable',equipment:'Cable Machine'},
-  {id:'e19',name:'Skull Crusher',nameAr:'سكال كراشر',muscle:'Triceps',type:'Barbell',equipment:'Barbell'},
-  {id:'e20',name:'Overhead Tricep Extension',nameAr:'إكستنشن علوي',muscle:'Triceps',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e21',name:'Close Grip Bench',nameAr:'بنش ضيق',muscle:'Triceps',type:'Barbell',equipment:'Barbell'},
-  {id:'e22',name:'Tricep Dips',nameAr:'ديبس ترايسبس',muscle:'Triceps',type:'Bodyweight',equipment:'Bench'},
-  {id:'e23',name:'Rope Pushdown',nameAr:'روب بوش داون',muscle:'Triceps',type:'Cable',equipment:'Cable Machine'},
+  {id:'e18',name:'Tricep Pushdown',nameAr:'ترايسبس كابل',muscle:'Triceps',type:'Cable',equipment:'Cable Machine',gif:'3ZflifB.gif'},
+  {id:'e19',name:'Skull Crusher',nameAr:'سكال كراشر',muscle:'Triceps',type:'Barbell',equipment:'Barbell',gif:'h8LFzo9.gif'},
+  {id:'e20',name:'Overhead Tricep Extension',nameAr:'إكستنشن علوي',muscle:'Triceps',type:'Dumbbell',equipment:'Dumbbell',gif:'5uFK1xr.gif'},
+  {id:'e21',name:'Close Grip Bench',nameAr:'بنش ضيق',muscle:'Triceps',type:'Barbell',equipment:'Barbell',gif:'J6Dx1Mu.gif'},
+  {id:'e22',name:'Tricep Dips',nameAr:'ديبس ترايسبس',muscle:'Triceps',type:'Bodyweight',equipment:'Bench',gif:'X6C6i5Y.gif'},
+  {id:'e23',name:'Rope Pushdown',nameAr:'روب بوش داون',muscle:'Triceps',type:'Cable',equipment:'Cable Machine',gif:'3ZflifB.gif'},
   // BACK
-  {id:'e24',name:'Deadlift',nameAr:'ديدليفت',muscle:'Back',type:'Barbell',equipment:'Barbell'},
-  {id:'e25',name:'Pull Up',nameAr:'عقلة',muscle:'Back',type:'Bodyweight',equipment:'Pull Up Bar'},
-  {id:'e26',name:'Lat Pulldown',nameAr:'لات بول داون',muscle:'Back',type:'Cable',equipment:'Cable Machine'},
-  {id:'e27',name:'Barbell Row',nameAr:'رو بار',muscle:'Back',type:'Barbell',equipment:'Barbell'},
-  {id:'e28',name:'Dumbbell Row',nameAr:'رو دمبل',muscle:'Back',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e29',name:'Seated Cable Row',nameAr:'رو جلوس كابل',muscle:'Back',type:'Cable',equipment:'Cable Machine'},
-  {id:'e30',name:'T-Bar Row',nameAr:'تي بار رو',muscle:'Back',type:'Machine',equipment:'T-Bar'},
-  {id:'e31',name:'Face Pull',nameAr:'فيس بول ظهر',muscle:'Back',type:'Cable',equipment:'Cable Machine'},
-  {id:'e32',name:'Hyperextension',nameAr:'هايبر إكستنشن',muscle:'Back',type:'Bodyweight',equipment:'GHD'},
-  {id:'e33',name:'Straight Arm Pulldown',nameAr:'سترايت آرم',muscle:'Back',type:'Cable',equipment:'Cable Machine'},
+  {id:'e24',name:'Deadlift',nameAr:'ديدليفت',muscle:'Back',type:'Barbell',equipment:'Barbell',gif:'ila4NZS.gif'},
+  {id:'e25',name:'Pull Up',nameAr:'عقلة',muscle:'Back',type:'Bodyweight',equipment:'Pull Up Bar',gif:'lBDjFxJ.gif'},
+  {id:'e26',name:'Lat Pulldown',nameAr:'لات بول داون',muscle:'Back',type:'Cable',equipment:'Cable Machine',gif:'RVwzP10.gif'},
+  {id:'e27',name:'Barbell Row',nameAr:'رو بار',muscle:'Back',type:'Barbell',equipment:'Barbell',gif:'eZyBC3j.gif'},
+  {id:'e28',name:'Dumbbell Row',nameAr:'رو دمبل',muscle:'Back',type:'Dumbbell',equipment:'Dumbbell',gif:'BJ0Hz5L.gif'},
+  {id:'e29',name:'Seated Cable Row',nameAr:'رو جلوس كابل',muscle:'Back',type:'Cable',equipment:'Cable Machine',gif:'Hgs6Nl1.gif'},
+  {id:'e30',name:'T-Bar Row',nameAr:'تي بار رو',muscle:'Back',type:'Machine',equipment:'T-Bar',gif:'aaXr7ld.gif'},
+  {id:'e31',name:'Face Pull',nameAr:'فيس بول ظهر',muscle:'Back',type:'Cable',equipment:'Cable Machine',gif:'wqNPGCg.gif'},
+  {id:'e32',name:'Hyperextension',nameAr:'هايبر إكستنشن',muscle:'Back',type:'Bodyweight',equipment:'GHD',gif:'XlZ4lAC.gif'},
+  {id:'e33',name:'Straight Arm Pulldown',nameAr:'سترايت آرم',muscle:'Back',type:'Cable',equipment:'Cable Machine',gif:'x69MAlq.gif'},
   // BICEPS
-  {id:'e34',name:'Barbell Curl',nameAr:'كيرل بار',muscle:'Biceps',type:'Barbell',equipment:'Barbell'},
-  {id:'e35',name:'Dumbbell Curl',nameAr:'كيرل دمبل',muscle:'Biceps',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e36',name:'Hammer Curl',nameAr:'هامر كيرل',muscle:'Biceps',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e37',name:'Preacher Curl',nameAr:'بريتشر كيرل',muscle:'Biceps',type:'Barbell',equipment:'Preacher Bench'},
-  {id:'e38',name:'Cable Curl',nameAr:'كيرل كابل',muscle:'Biceps',type:'Cable',equipment:'Cable Machine'},
-  {id:'e39',name:'Concentration Curl',nameAr:'كيرل تركيز',muscle:'Biceps',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e40',name:'Incline Dumbbell Curl',nameAr:'كيرل مائل',muscle:'Biceps',type:'Dumbbell',equipment:'Dumbbell'},
+  {id:'e34',name:'Barbell Curl',nameAr:'كيرل بار',muscle:'Biceps',type:'Barbell',equipment:'Barbell',gif:'25GPyDY.gif'},
+  {id:'e35',name:'Dumbbell Curl',nameAr:'كيرل دمبل',muscle:'Biceps',type:'Dumbbell',equipment:'Dumbbell',gif:'qAmNMJY.gif'},
+  {id:'e36',name:'Hammer Curl',nameAr:'هامر كيرل',muscle:'Biceps',type:'Dumbbell',equipment:'Dumbbell',gif:'slDvUAU.gif'},
+  {id:'e37',name:'Preacher Curl',nameAr:'بريتشر كيرل',muscle:'Biceps',type:'Barbell',equipment:'Preacher Bench',gif:'qOgPVf6.gif'},
+  {id:'e38',name:'Cable Curl',nameAr:'كيرل كابل',muscle:'Biceps',type:'Cable',equipment:'Cable Machine',gif:'G08RZcQ.gif'},
+  {id:'e39',name:'Concentration Curl',nameAr:'كيرل تركيز',muscle:'Biceps',type:'Dumbbell',equipment:'Dumbbell',gif:'gvsWLQw.gif'},
+  {id:'e40',name:'Incline Dumbbell Curl',nameAr:'كيرل مائل',muscle:'Biceps',type:'Dumbbell',equipment:'Dumbbell',gif:'qAmNMJY.gif'},
   // LEGS
-  {id:'e41',name:'Squat',nameAr:'سكوات',muscle:'Legs',type:'Barbell',equipment:'Barbell'},
-  {id:'e42',name:'Romanian Deadlift',nameAr:'ديدليفت روماني',muscle:'Legs',type:'Barbell',equipment:'Barbell'},
-  {id:'e43',name:'Leg Press',nameAr:'ليج بريس',muscle:'Legs',type:'Machine',equipment:'Leg Press'},
-  {id:'e44',name:'Leg Extension',nameAr:'ليج إكستنشن',muscle:'Legs',type:'Machine',equipment:'Machine'},
-  {id:'e45',name:'Leg Curl',nameAr:'ليج كيرل',muscle:'Legs',type:'Machine',equipment:'Machine'},
-  {id:'e46',name:'Bulgarian Split Squat',nameAr:'بلغاري سبليت',muscle:'Legs',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e47',name:'Walking Lunges',nameAr:'لونج',muscle:'Legs',type:'Dumbbell',equipment:'Dumbbell'},
-  {id:'e48',name:'Hack Squat',nameAr:'هاك سكوات',muscle:'Legs',type:'Machine',equipment:'Hack Squat'},
-  {id:'e49',name:'Calf Raise',nameAr:'كالف رايز',muscle:'Calves',type:'Machine',equipment:'Machine'},
-  {id:'e50',name:'Seated Calf Raise',nameAr:'كالف جلوس',muscle:'Calves',type:'Machine',equipment:'Machine'},
-  {id:'e51',name:'Good Morning',nameAr:'جود مورنينج',muscle:'Legs',type:'Barbell',equipment:'Barbell'},
-  {id:'e52',name:'Hip Thrust',nameAr:'هيب ثراست',muscle:'Legs',type:'Barbell',equipment:'Barbell'},
+  {id:'e41',name:'Squat',nameAr:'سكوات',muscle:'Legs',type:'Barbell',equipment:'Barbell',gif:'qXTaZnJ.gif'},
+  {id:'e42',name:'Romanian Deadlift',nameAr:'ديدليفت روماني',muscle:'Legs',type:'Barbell',equipment:'Barbell',gif:'wQ2c4XD.gif'},
+  {id:'e43',name:'Leg Press',nameAr:'ليج بريس',muscle:'Legs',type:'Machine',equipment:'Leg Press',gif:'7zdxRTl.gif'},
+  {id:'e44',name:'Leg Extension',nameAr:'ليج إكستنشن',muscle:'Legs',type:'Machine',equipment:'Machine',gif:'Y1MsI1l.gif'},
+  {id:'e45',name:'Leg Curl',nameAr:'ليج كيرل',muscle:'Legs',type:'Machine',equipment:'Machine',gif:'C5jncD2.gif'},
+  {id:'e46',name:'Bulgarian Split Squat',nameAr:'بلغاري سبليت',muscle:'Legs',type:'Dumbbell',equipment:'Dumbbell',gif:'qx4fgX7.gif'},
+  {id:'e47',name:'Walking Lunges',nameAr:'لونج',muscle:'Legs',type:'Dumbbell',equipment:'Dumbbell',gif:'IZVHb27.gif'},
+  {id:'e48',name:'Hack Squat',nameAr:'هاك سكوات',muscle:'Legs',type:'Machine',equipment:'Hack Squat',gif:'5VCj6iH.gif'},
+  {id:'e49',name:'Calf Raise',nameAr:'كالف رايز',muscle:'Calves',type:'Machine',equipment:'Machine',gif:'8ozhUIZ.gif'},
+  {id:'e50',name:'Seated Calf Raise',nameAr:'كالف جلوس',muscle:'Calves',type:'Machine',equipment:'Machine',gif:'ktsFQAZ.gif'},
+  {id:'e51',name:'Good Morning',nameAr:'جود مورنينج',muscle:'Legs',type:'Barbell',equipment:'Barbell',gif:'XlZ4lAC.gif'},
+  {id:'e52',name:'Hip Thrust',nameAr:'هيب ثراست',muscle:'Legs',type:'Barbell',equipment:'Barbell',gif:'qKBpF7I.gif'},
   // ABS
-  {id:'e53',name:'Crunch',nameAr:'كرنش',muscle:'Abs',type:'Bodyweight',equipment:'Bodyweight'},
-  {id:'e54',name:'Plank',nameAr:'بلانك',muscle:'Abs',type:'Bodyweight',equipment:'Bodyweight'},
-  {id:'e55',name:'Cable Crunch',nameAr:'كرنش كابل',muscle:'Abs',type:'Cable',equipment:'Cable Machine'},
-  {id:'e56',name:'Leg Raise',nameAr:'رفع رجلين',muscle:'Abs',type:'Bodyweight',equipment:'Bodyweight'},
-  {id:'e57',name:'Russian Twist',nameAr:'روشن تويست',muscle:'Abs',type:'Bodyweight',equipment:'Bodyweight'},
-  {id:'e58',name:'Ab Wheel',           nameAr:'أب ويل',            muscle:'Abs',      type:'Equipment',  equipment:'Ab Wheel'},
-  {id:'e59',name:'Dumbbell Bench Press', nameAr:'بنش دمبل',           muscle:'Chest',     type:'Dumbbell',   equipment:'Dumbbell'},
-  {id:'e60',name:'Low Cable Fly',        nameAr:'فلاي كابل سفلي',     muscle:'Chest',     type:'Cable',      equipment:'Cable Machine'},
-  {id:'e61',name:'Incline Cable Fly',    nameAr:'فلاي كابل علوي',     muscle:'Chest',     type:'Cable',      equipment:'Cable Machine'},
-  {id:'e62',name:'Decline DB Press',     nameAr:'دمبل مائل سفلي',     muscle:'Chest',     type:'Dumbbell',   equipment:'Dumbbell'},
-  {id:'e63',name:'Rear Delt Fly',        nameAr:'فلاي كتف خلفي',      muscle:'Shoulders', type:'Dumbbell',   equipment:'Dumbbell'},
-  {id:'e64',name:'Machine Shoulder Press',nameAr:'بريس كتف ماشين',    muscle:'Shoulders', type:'Machine',    equipment:'Machine'},
-  {id:'e65',name:'Push Press',           nameAr:'بوش بريس',           muscle:'Shoulders', type:'Barbell',    equipment:'Barbell'},
-  {id:'e66',name:'Overhead Cable Ext.',  nameAr:'إكستنشن كابل علوي',  muscle:'Triceps',   type:'Cable',      equipment:'Cable Machine'},
-  {id:'e67',name:'Diamond Push Up',      nameAr:'ضغط ماسي',           muscle:'Triceps',   type:'Bodyweight', equipment:'Bodyweight'},
-  {id:'e68',name:'Chest Supported Row',  nameAr:'رو مائل',            muscle:'Back',      type:'Dumbbell',   equipment:'Dumbbell'},
-  {id:'e69',name:'Rack Pull',            nameAr:'راك بول',            muscle:'Back',      type:'Barbell',    equipment:'Barbell'},
-  {id:'e70',name:'Wide Grip Pulldown',   nameAr:'لات بول واسع',       muscle:'Back',      type:'Cable',      equipment:'Cable Machine'},
-  {id:'e71',name:'Straight Arm Pulldown',nameAr:'ستريت آرم بول',      muscle:'Back',      type:'Cable',      equipment:'Cable Machine'},
-  {id:'e72',name:'Incline DB Curl',      nameAr:'كيرل دمبل مائل',     muscle:'Biceps',    type:'Dumbbell',   equipment:'Dumbbell'},
-  {id:'e73',name:'Concentration Curl',   nameAr:'كيرل تركيزي',        muscle:'Biceps',    type:'Dumbbell',   equipment:'Dumbbell'},
-  {id:'e74',name:'EZ Bar Curl',          nameAr:'كيرل EZ',            muscle:'Biceps',    type:'Barbell',    equipment:'EZ Bar'},
-  {id:'e75',name:'Rope Hammer Curl',     nameAr:'هامر كيرل كابل',     muscle:'Biceps',    type:'Cable',      equipment:'Cable Machine'},
-  {id:'e76',name:'Seated Calf Raise',    nameAr:'رفعة قدم جلوس',      muscle:'Legs',      type:'Machine',    equipment:'Machine'},
-  {id:'e77',name:'Step Up',              nameAr:'ستيب أب',            muscle:'Legs',      type:'Dumbbell',   equipment:'Dumbbell'},
-  {id:'e78',name:'Goblet Squat',         nameAr:'جوبليت سكوات',       muscle:'Legs',      type:'Dumbbell',   equipment:'Dumbbell'},
-  {id:'e79',name:'Good Morning',         nameAr:'جود مورنينج',        muscle:'Legs',      type:'Barbell',    equipment:'Barbell'},
-  {id:'e80',name:'Crunch',               nameAr:'كرنش',               muscle:'Abs',       type:'Bodyweight', equipment:'Bodyweight'},
-  {id:'e81',name:'Sit Up',               nameAr:'سيت أب',             muscle:'Abs',       type:'Bodyweight', equipment:'Bodyweight'},
-  {id:'e82',name:'Mountain Climber',     nameAr:'تسلق الجبل',         muscle:'Abs',       type:'Bodyweight', equipment:'Bodyweight'},
-  {id:'e83',name:'Decline Crunch',       nameAr:'كرنش مائل',          muscle:'Abs',       type:'Bodyweight', equipment:'Decline Bench'},
+  {id:'e53',name:'Crunch',nameAr:'كرنش',muscle:'Abs',type:'Bodyweight',equipment:'Bodyweight',gif:'BMMolZ3.gif'},
+  {id:'e54',name:'Plank',nameAr:'بلانك',muscle:'Abs',type:'Bodyweight',equipment:'Bodyweight',gif:'VBAWRPG.gif'},
+  {id:'e55',name:'Cable Crunch',nameAr:'كرنش كابل',muscle:'Abs',type:'Cable',equipment:'Cable Machine',gif:'8xUv4J7.gif'},
+  {id:'e56',name:'Leg Raise',nameAr:'رفع رجلين',muscle:'Abs',type:'Bodyweight',equipment:'Bodyweight',gif:'weoDEpH.gif'},
+  {id:'e57',name:'Russian Twist',nameAr:'روشن تويست',muscle:'Abs',type:'Bodyweight',equipment:'Bodyweight',gif:'XVDdcoj.gif'},
+  {id:'e58',name:'Ab Wheel',           nameAr:'أب ويل',            muscle:'Abs',      type:'Equipment',  equipment:'Ab Wheel',gif:'xnInPfE.gif'},
+  {id:'e59',name:'Dumbbell Bench Press', nameAr:'بنش دمبل',           muscle:'Chest',     type:'Dumbbell',   equipment:'Dumbbell',gif:'SpYC0Kp.gif'},
+  {id:'e60',name:'Low Cable Fly',        nameAr:'فلاي كابل سفلي',     muscle:'Chest',     type:'Cable',      equipment:'Cable Machine',gif:'FVmZVhk.gif'},
+  {id:'e61',name:'Incline Cable Fly',    nameAr:'فلاي كابل علوي',     muscle:'Chest',     type:'Cable',      equipment:'Cable Machine',gif:'tBWXbIT.gif'},
+  {id:'e62',name:'Decline DB Press',     nameAr:'دمبل مائل سفلي',     muscle:'Chest',     type:'Dumbbell',   equipment:'Dumbbell',gif:'DwhEmmE.gif'},
+  {id:'e63',name:'Rear Delt Fly',        nameAr:'فلاي كتف خلفي',      muscle:'Shoulders', type:'Dumbbell',   equipment:'Dumbbell',gif:'EAs3xL9.gif'},
+  {id:'e64',name:'Machine Shoulder Press',nameAr:'بريس كتف ماشين',    muscle:'Shoulders', type:'Machine',    equipment:'Machine',gif:'znQUdHY.gif'},
+  {id:'e65',name:'Push Press',           nameAr:'بوش بريس',           muscle:'Shoulders', type:'Barbell',    equipment:'Barbell',gif:'FS63wTN.gif'},
+  {id:'e66',name:'Overhead Cable Ext.',  nameAr:'إكستنشن كابل علوي',  muscle:'Triceps',   type:'Cable',      equipment:'Cable Machine',gif:'2IxROQ1.gif'},
+  {id:'e67',name:'Diamond Push Up',      nameAr:'ضغط ماسي',           muscle:'Triceps',   type:'Bodyweight', equipment:'Bodyweight',gif:'I4hDWkc.gif'},
+  {id:'e68',name:'Chest Supported Row',  nameAr:'رو مائل',            muscle:'Back',      type:'Dumbbell',   equipment:'Dumbbell',gif:'Hgs6Nl1.gif'},
+  {id:'e69',name:'Rack Pull',            nameAr:'راك بول',            muscle:'Back',      type:'Barbell',    equipment:'Barbell',gif:'dG5Smob.gif'},
+  {id:'e70',name:'Wide Grip Pulldown',   nameAr:'لات بول واسع',       muscle:'Back',      type:'Cable',      equipment:'Cable Machine',gif:'RVwzP10.gif'},
+  {id:'e71',name:'Straight Arm Pulldown',nameAr:'ستريت آرم بول',      muscle:'Back',      type:'Cable',      equipment:'Cable Machine',gif:'x69MAlq.gif'},
+  {id:'e72',name:'Incline DB Curl',      nameAr:'كيرل دمبل مائل',     muscle:'Biceps',    type:'Dumbbell',   equipment:'Dumbbell',gif:'qAmNMJY.gif'},
+  {id:'e73',name:'Concentration Curl',   nameAr:'كيرل تركيزي',        muscle:'Biceps',    type:'Dumbbell',   equipment:'Dumbbell',gif:'gvsWLQw.gif'},
+  {id:'e74',name:'EZ Bar Curl',          nameAr:'كيرل EZ',            muscle:'Biceps',    type:'Barbell',    equipment:'EZ Bar',gif:'25GPyDY.gif'},
+  {id:'e75',name:'Rope Hammer Curl',     nameAr:'هامر كيرل كابل',     muscle:'Biceps',    type:'Cable',      equipment:'Cable Machine',gif:'slDvUAU.gif'},
+  {id:'e76',name:'Seated Calf Raise',    nameAr:'رفعة قدم جلوس',      muscle:'Legs',      type:'Machine',    equipment:'Machine',gif:'ktsFQAZ.gif'},
+  {id:'e77',name:'Step Up',              nameAr:'ستيب أب',            muscle:'Legs',      type:'Dumbbell',   equipment:'Dumbbell',gif:'aXtJhlg.gif'},
+  {id:'e78',name:'Goblet Squat',         nameAr:'جوبليت سكوات',       muscle:'Legs',      type:'Dumbbell',   equipment:'Dumbbell',gif:'yn8yg1r.gif'},
+  {id:'e79',name:'Good Morning',         nameAr:'جود مورنينج',        muscle:'Legs',      type:'Barbell',    equipment:'Barbell',gif:'XlZ4lAC.gif'},
+  {id:'e80',name:'Crunch',               nameAr:'كرنش',               muscle:'Abs',       type:'Bodyweight', equipment:'Bodyweight',gif:'BMMolZ3.gif'},
+  {id:'e81',name:'Sit Up',               nameAr:'سيت أب',             muscle:'Abs',       type:'Bodyweight', equipment:'Bodyweight',gif:'2gPfomN.gif'},
+  {id:'e82',name:'Mountain Climber',     nameAr:'تسلق الجبل',         muscle:'Abs',       type:'Bodyweight', equipment:'Bodyweight',gif:'RJgzwny.gif'},
+  {id:'e83',name:'Decline Crunch',       nameAr:'كرنش مائل',          muscle:'Abs',       type:'Bodyweight', equipment:'Decline Bench',gif:'9Ap7miY.gif'},
   {id:'e84',name:'Dragon Flag',          nameAr:'دراجون فلاج',        muscle:'Abs',       type:'Bodyweight', equipment:'Bench'},
-  {id:'e85',name:'Treadmill Run',        nameAr:'ركض على السير',      muscle:'Cardio',    type:'Cardio',     equipment:'Treadmill'},
+  {id:'e85',name:'Treadmill Run',        nameAr:'ركض على السير',      muscle:'Cardio',    type:'Cardio',     equipment:'Treadmill',gif:'rjiM4L3.gif'},
   {id:'e86',name:'Rowing Machine',       nameAr:'ماشينة التجديف',     muscle:'Cardio',    type:'Cardio',     equipment:'Rowing Machine'},
   {id:'e87',name:'Jump Rope',            nameAr:'حبل القفز',          muscle:'Cardio',    type:'Cardio',     equipment:'Jump Rope'},
-  {id:'e88',name:'Stationary Bike',      nameAr:'دراجة ثابتة',        muscle:'Cardio',    type:'Cardio',     equipment:'Bike'},
+  {id:'e88',name:'Stationary Bike',      nameAr:'دراجة ثابتة',        muscle:'Cardio',    type:'Cardio',     equipment:'Bike',gif:'H1PESYI.gif'},
 ];
 
 
@@ -3857,7 +3868,7 @@ function wlibSelectEx(exId) {
     const already = activeWorkout.exercises.find(e => e.id === exId);
     if (already) { showToast('التمرين موجود بالفعل'); return; }
     activeWorkout.exercises.push({
-      id: ex.id, name: ex.nameAr || ex.name, muscle: ex.muscle,
+      id: ex.id, name: ex.nameAr || ex.name, muscle: ex.muscle, gif: ex.gif || '',
       sets: getLastSetsForExercise(ex.id), restTime: 90, note: ''
     });
     state.activeWorkout = activeWorkout;
@@ -4153,6 +4164,7 @@ function renderLibCard(ex, usedIds) {
       </div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+      ${ex.gif ? `<button onclick="openExGifDirect('${ex.gif}','${(ex.nameAr||ex.name).replace(/'/g,"\\'")}')" style="background:rgba(245,200,66,0.1);border:1px solid var(--border-bright);color:var(--gold);border-radius:8px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px">🎬</button>` : ''}
       ${deleteBtn}
       <button class="add-to-day-btn" onclick="openAddToDay(null,null,'${ex.id}')">+ أضف</button>
     </div>
@@ -4215,6 +4227,7 @@ function startWorkout(ppl, di) {
       id: ex.id,
       name: ex.nameAr || ex.name,
       muscle: ex.muscle,
+      gif: ex.gif || '',
       sets: getLastSetsForExercise(ex.id)
     }))
   };
@@ -4272,8 +4285,9 @@ function renderActiveExercises() {
           </div>
           <div style="flex:1;min-width:0">
             <div class="active-ex-name">${ex.name}</div>
-            <div style="display:flex;gap:10px;margin-top:2px;flex-wrap:wrap">
+            <div style="display:flex;gap:10px;margin-top:2px;flex-wrap:wrap;align-items:center">
               <div class="active-ex-muscle">${ex.muscle}</div>
+              ${ex.gif ? `<button onclick="openExGif(${ei})" style="background:rgba(245,200,66,0.1);border:1px solid var(--border-bright);color:var(--gold);border-radius:6px;padding:2px 8px;font-family:var(--font-mono);font-size:9px;font-weight:700;cursor:pointer">🎬 شوف الحركة</button>` : ''}
               ${(()=>{ const pr=state.prs[ex.id]; return pr?`<span style="color:var(--gold);font-family:var(--font-mono);font-size:10px">🏆 ${pr.weight}kg×${pr.reps}</span>`:''; })()}
             </div>
           </div>
@@ -5565,6 +5579,25 @@ setInterval(() => {
 }, 30 * 60 * 1000);
 
 // ── AI COACH ──
+// ============================================================
+// EXERCISE GIF MODAL
+// ============================================================
+function openExGif(ei) {
+  const ex = activeWorkout && activeWorkout.exercises[ei];
+  if (!ex || !ex.gif) return;
+  openExGifDirect(ex.gif, ex.name);
+}
+function openExGifDirect(gif, name) {
+  const frame = document.getElementById('ex-gif-frame');
+  frame.innerHTML = `<img src="gifs/${gif}" loading="lazy" alt="${name}" style="width:100%;height:100%;object-fit:contain;background:#fff">`;
+  document.getElementById('ex-gif-title').textContent = name || '';
+  document.getElementById('ex-gif-modal').style.display = 'flex';
+}
+function closeExGifModal() {
+  document.getElementById('ex-gif-modal').style.display = 'none';
+  document.getElementById('ex-gif-frame').innerHTML = '';
+}
+
 // ============================================================
 // AI COACH
 // ============================================================
