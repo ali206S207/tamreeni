@@ -4254,7 +4254,7 @@ function startWorkout(ppl, di) {
   try {
     if (!state.schedule || !state.schedule[ppl] || !state.schedule[ppl][di]) {
       console.error('startWorkout: missing schedule/day', { ppl, di, schedule: state.schedule });
-      appAlert('حصلت مشكلة في تحميل بيانات اليوم ده. جرب تعمل تحديث للصفحة (Refresh) وحاول تاني.');
+      appAlert('حصلت مشكلة في تحميل بيانات اليوم ده.\nppl=' + ppl + ' | di=' + di + ' | schedule keys=' + (state.schedule ? Object.keys(state.schedule).join(',') : 'null') + ' | days in ' + ppl + '=' + (state.schedule && state.schedule[ppl] ? state.schedule[ppl].length : 'N/A') + '\nجرب تعمل تحديث للصفحة (Refresh) وحاول تاني.');
       return;
     }
 
