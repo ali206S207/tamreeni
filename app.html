@@ -2327,16 +2327,19 @@ var _swReg = null;
 <body>
 
 <div id="loading-screen">
-  <div class="loading-logo-wrap">
-    <div class="loading-logo-ring"></div>
-    <div class="loading-logo-inner" id="loading-avatar"></div>
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px">
+    <div class="loading-logo-wrap" style="margin-bottom:0">
+      <div class="loading-logo-ring"></div>
+      <div class="loading-logo-inner" id="loading-avatar"></div>
+    </div>
+    <div style="font-size:32px;font-weight:900;color:var(--text-muted)">×</div>
+    <div style="width:100px;height:100px;border-radius:50%;background:var(--bg2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden">
+      <img src="tefa-logo-small.png" alt="TEFA GYM" style="width:78px;height:78px;object-fit:contain">
+    </div>
   </div>
   <div class="loading-title" style="font-family:var(--font-main);font-weight:900">تمريـ<span style="color:var(--gold);text-shadow:0 0 20px var(--gold)">نتي</span></div>
   <div class="loading-sub" style="font-family:var(--font-mono);letter-spacing:3px;color:var(--text-muted)">// سجّل · تابع · تقدّم</div>
-  <div style="display:flex;align-items:center;gap:12px;margin-top:20px;opacity:0.95">
-    <img src="tefa-logo-small.png" alt="TEFA GYM" style="height:52px;width:auto">
-    <span style="font-family:var(--font-mono);font-size:14px;letter-spacing:1.5px;color:var(--text-muted)">بالتعاون مع<br><b style="color:var(--gold);font-size:16px">TEFA GYM</b></span>
-  </div>
+  <div style="font-family:var(--font-mono);font-size:12px;letter-spacing:1.5px;color:var(--text-muted);margin-top:10px">بالتعاون مع <b style="color:var(--gold);font-size:14px">TEFA GYM</b></div>
   <div class="loading-bar-wrap">
     <div class="loading-bar-fill" id="loading-bar"></div>
   </div>
@@ -2354,17 +2357,18 @@ var _swReg = null;
                 <span id="hero-gym-dot" style="width:7px;height:7px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px var(--gold);display:inline-block;animation:dot-pulse 2s ease-in-out infinite"></span>
                 <span id="hero-gym-name">TEFA GYM</span>
               </div>
-              <div style="font-family:var(--font-main);font-size:28px;font-weight:900;line-height:1;color:var(--text)">تمريـ<span style="color:var(--gold);text-shadow:0 0 16px var(--glow)">نتي</span></div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="font-family:var(--font-main);font-size:28px;font-weight:900;line-height:1;color:var(--text)">تمريـ<span style="color:var(--gold);text-shadow:0 0 16px var(--glow)">نتي</span></div>
+                <div style="font-size:22px;font-weight:900;color:var(--text-muted)">×</div>
+                <img src="tefa-logo-small.png" alt="TEFA GYM" style="height:36px;width:auto">
+              </div>
             </div>
             <div style="text-align:right">
               <div style="font-family:var(--font-mono);font-size:9px;letter-spacing:2px;color:rgba(41,121,255,0.4);margin-bottom:2px">// TODAY</div>
               <div id="hero-date" style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--text-dim)"></div>
             </div>
           </div>
-          <div style="display:flex;align-items:center;gap:10px;background:rgba(41,121,255,0.08);border:1px solid rgba(41,121,255,0.25);border-radius:10px;padding:8px 14px;margin-bottom:12px;width:fit-content">
-            <img src="tefa-logo-small.png" alt="TEFA GYM" style="height:36px;width:auto">
-            <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:1px;color:var(--text-muted)">بالتعاون مع <b style="color:var(--gold);font-size:13px">TEFA GYM</b></span>
-          </div>
+          <div style="font-family:var(--font-mono);font-size:10px;letter-spacing:1px;color:var(--text-muted);margin-bottom:12px">بالتعاون مع <b style="color:var(--gold)">TEFA GYM</b></div>
           <div class="week-grid" id="week-grid"></div>
           <div style="margin-top:12px;font-family:var(--font-mono);font-size:9px;letter-spacing:3px;color:rgba(41,121,255,0.25)">// سجّل تمرينك · تابع تقدمك · كسر أرقامك</div>
         </div>
