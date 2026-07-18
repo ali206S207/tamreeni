@@ -1,13 +1,15 @@
 // تمرينتي — Service Worker
 // لما تعمل أي تحديث في الكود: زوّد رقم CACHE_VERSION عشان المستخدمين ياخدوا التحديث أوتوماتيك
-const CACHE_VERSION = 'v10';
+const CACHE_VERSION = 'v11';
 const CACHE = 'tamreeni-' + CACHE_VERSION;
 
 const APP_SHELL = [
   './app.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './tefa-logo-small.png',
+  './tefa-logo.png'
 ];
 
 self.addEventListener('install', e => {
