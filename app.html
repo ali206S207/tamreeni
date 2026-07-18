@@ -4252,23 +4252,41 @@ function getLastSetsForExercise(exId) {
 
 function startWorkout(ppl, di) {
   try {
-    if (!state.schedule || !state.schedule[ppl] || !state.schedule[ppl][di]) {
-      console.error('startWorkout: missing schedule/day', { ppl, di, schedule: state.schedule });
-      appAlert('حصلت مشكلة في تحميل بيانات اليوم ده.\nppl=' + ppl + ' | di=' + di + ' | schedule keys=' + (state.schedule ? Object.keys(state.schedule).join(',') : 'null') + ' | days in ' + ppl + '=' + (state.schedule && state.schedule[ppl] ? state.schedule[ppl].length : 'N/A') + '\nجرب تعمل تحديث للصفحة (Refresh) وحاول تاني.');
-      return;
+    if (!state.schedule) state.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+
+    // لو اليوم ده مش موجود أو تالف — اصلحه من البرنامج الافتراضي بدل ما توقف المستخدم
+    let day = state.schedule[ppl] && state.schedule[ppl][di];
+    let repaired = false;
+    if (!day || typeof day !== 'object') {
+      const fallback = (DEFAULT_SCHEDULE[ppl] && DEFAULT_SCHEDULE[ppl][di % DEFAULT_SCHEDULE[ppl].length])
+        || { day: (ppl||'Day').toUpperCase() + ' ' + (di+1), exercises: [] };
+      if (!state.schedule[ppl]) state.schedule[ppl] = [];
+      state.schedule[ppl][di] = JSON.parse(JSON.stringify(fallback));
+      day = state.schedule[ppl][di];
+      repaired = true;
     }
+    if (!Array.isArray(day.exercises)) { day.exercises = []; repaired = true; }
 
-    const day = state.schedule[ppl][di];
-    if (!Array.isArray(day.exercises)) day.exercises = [];
-
-    const exercises = day.exercises
+    let exercises = day.exercises
       .map(id => EXERCISES_DB.find(e => e.id === id))
       .filter(Boolean);
+
+    // لو التمارين مش موجودة في القاعدة (IDs قديمة/تالفة) — رجّع تمارين اليوم الافتراضي بدل التوقف
+    if (exercises.length === 0) {
+      const fallback = DEFAULT_SCHEDULE[ppl] && DEFAULT_SCHEDULE[ppl][di % DEFAULT_SCHEDULE[ppl].length];
+      if (fallback) {
+        day.exercises = [...fallback.exercises];
+        exercises = day.exercises.map(id => EXERCISES_DB.find(e => e.id === id)).filter(Boolean);
+        repaired = true;
+      }
+    }
 
     if (exercises.length === 0) {
       appAlert('اليوم ده لسه ملوش تمارين. ضيف تمارين الأول من زرار التعديل بجانب اسم اليوم.');
       return;
     }
+
+    if (repaired) saveState();
 
     activeWorkout = {
       ppl, di,
@@ -4294,6 +4312,8 @@ function startWorkout(ppl, di) {
     renderActiveExercises();
     startWorkoutTimer();
     updateWorkoutStats();
+
+    if (repaired) showToast('تم إصلاح بيانات اليوم ده تلقائيًا ✓');
   } catch (err) {
     console.error('startWorkout error:', err);
     appAlert('حصل خطأ وإحنا بنجهز التمرين: ' + (err && err.message ? err.message : 'unknown error'));
