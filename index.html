@@ -107,17 +107,17 @@ nav.scrolled .nav-inner{box-shadow:6px 6px 14px var(--sh-dark), -6px -6px 14px v
 .hero-btns{display:flex;gap:14px;flex-wrap:wrap}
 .hero-btns .neu-btn{padding:17px 34px;font-size:15px;font-weight:700}
 
-.hero-right{flex-shrink:0}
+.hero-right{flex-shrink:0; max-width:100%;}
 .logo-orb{
-  width:280px;height:280px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  width:clamp(84px,22vw,280px);height:clamp(84px,22vw,280px);border-radius:50%;display:flex;align-items:center;justify-content:center;
   position:relative;
 }
 .logo-orb::before,.logo-orb::after{
   content:'';position:absolute;border-radius:50%;border:1px solid rgba(120,155,230,0.08);
 }
-.logo-orb::before{inset:-24px}
-.logo-orb::after{inset:-48px}
-.logo-orb img{width:120px;height:120px;border-radius:30px;box-shadow:0 20px 50px rgba(0,0,0,0.5)}
+.logo-orb::before{inset:clamp(-10px,-8%,-24px)}
+.logo-orb::after{inset:clamp(-20px,-16%,-48px)}
+.logo-orb img{width:60%;height:60%;border-radius:14%;box-shadow:0 20px 50px rgba(0,0,0,0.5)}
 
 /* ── STATS ── */
 .stats-strip{
@@ -280,13 +280,13 @@ footer{max-width:1200px;margin:0 auto;padding:40px 5% 60px;display:flex;align-it
     </div>
   </div>
 
-  <div class="hero-right" style="display:flex;align-items:center;justify-content:center;gap:22px">
+  <div class="hero-right" style="display:flex;align-items:center;justify-content:center;gap:clamp(8px,3vw,22px)">
     <div class="logo-orb neu-raised">
       <img src="logo.png" alt="تمرينتي Logo">
     </div>
-    <div style="font-size:44px;font-weight:900;color:#7A8AA8;flex-shrink:0">×</div>
+    <div style="font-size:clamp(20px,5vw,44px);font-weight:900;color:#7A8AA8;flex-shrink:0">×</div>
     <div class="logo-orb neu-raised">
-      <img src="tefa-logo-small.png" alt="TEFA GYM" style="width:120px;height:120px;object-fit:contain;border-radius:30px;box-shadow:0 20px 50px rgba(0,0,0,0.5);background:#04070F">
+      <img src="tefa-logo-small.png" alt="TEFA GYM" style="object-fit:contain;background:#04070F">
     </div>
   </div>
 </section>
