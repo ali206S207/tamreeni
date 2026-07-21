@@ -485,6 +485,24 @@ body::before {
   display: flex;
   align-items: center;
 }
+.icon-btn-danger {
+  background: rgba(255,80,80,0.08);
+  border: 1px solid rgba(255,80,80,0.25);
+  cursor: pointer;
+  color: #ff5c5c;
+  width: 30px;
+  height: 30px;
+  min-width: 30px;
+  border-radius: 8px;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn-danger:hover, .icon-btn-danger:active {
+  background: rgba(255,80,80,0.2);
+  border-color: #ff5c5c;
+}
 
 .icon-btn:hover { color: var(--red); }
 .icon-btn.add { color: var(--text-dim); }
@@ -2654,6 +2672,49 @@ var _swReg = null;
   </div>
 </div>
 
+<!-- ===== ONBOARDING GUIDE (يظهر أول مرة بعد إضافة أول جيم) ===== -->
+<div class="modal-overlay" id="onboarding-modal">
+  <div class="modal-sheet" style="max-height:88vh;overflow-y:auto">
+    <div class="modal-title">إزاي تستخدم تمرينتي؟</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button id="guide-tab-beginner" class="filter-chip active" style="flex:1;text-align:center" onclick="showGuideTab('beginner')">🌱 لسه مبتدئ</button>
+      <button id="guide-tab-pro" class="filter-chip" style="flex:1;text-align:center" onclick="showGuideTab('pro')">🏆 محترف</button>
+    </div>
+
+    <div id="guide-beginner">
+      <div style="font-family:var(--font-main);font-size:13.5px;line-height:2;color:var(--text)">
+        <p style="margin-bottom:10px;color:var(--text-muted)">هنمشي معاك خطوة خطوة من غير ما تتلخبط:</p>
+        <p>1️⃣ التطبيق حاطط لك برنامج جاهز (Push/Pull/Legs) — مش لازم تعرف تصمم برنامج، هو موجود.</p>
+        <p>2️⃣ روح لصفحة "التمارين" واختار أي يوم (Push مثلاً) ودوس <b>▶ ابدأ</b>.</p>
+        <p>3️⃣ لو مش عارف التمرين شكله ازاي، دوس على 👁 اللي جنب التمرين قبل ما تبدأ — هتشوف الحركة كاملة.</p>
+        <p>4️⃣ وانت بتتمرن، اكتب الوزن وعدد العدات لكل سيت، ودوس علامة ✓ لما تخلص السيت.</p>
+        <p>5️⃣ مش عاجبك تمرين معين وانت جواه؟ دوس 🔄 وبدّله بأي تمرين تاني من نفس العضلة.</p>
+        <p>6️⃣ التطبيق هيديك تايمر راحة تلقائي بين السيتات ويرن لما يخلص.</p>
+        <p>7️⃣ خلصت التمرين؟ دوس "إنهاء" — هيتسجل تلقائي، ولو كسرت رقم قياسي هيقولك على طول 🏆</p>
+        <p style="margin-top:12px;color:var(--text-muted)">مش لازم تفهم كل حاجة أول يوم — جرب واتمرن، وباقي المميزات هتكتشفها مع الوقت.</p>
+      </div>
+    </div>
+
+    <div id="guide-pro" style="display:none">
+      <div style="font-family:var(--font-main);font-size:13.5px;line-height:1.95;color:var(--text)">
+        <p style="margin-bottom:10px;color:var(--text-muted)">دليل شامل لكل حاجة في التطبيق:</p>
+        <p><b>📋 البرامج:</b> مش لازم تلتزم بـ PPL — تقدر تبني برنامجك الخاص (Upper/Lower، Full Body، Arnold Split، Bro Split) وتبدّل بينهم في أي وقت من الإعدادات.</p>
+        <p><b>✏️ تعديل التمارين:</b> ضيف/احذف/رتّب تمارين اليوم بالسحب، وسمّي كل يوم زي ما تحب.</p>
+        <p><b>🔄 استبدال أثناء التمرين:</b> لو انت جوه التمرين وحابب تغيّر تمرين، مش لازم توقف وترجع للجدول — دوس 🔄 جنب التمرين وبدّله فورًا.</p>
+        <p><b>🏆 أرقام قياسية:</b> التطبيق بيراقب كل تمرين، وأول ما تكسر رقمك بيقولك تلقائي من غير ما تدوّر.</p>
+        <p><b>📈 تتبع التقدم:</b> سجّل وزن جسمك بشكل دوري وشوف رسم بياني لتطورك، وكمان حجم تدريبك الشهري.</p>
+        <p><b>🏢 الجيمات:</b> النسخة المجانية بتديك 3 جيمات منفصلة تمامًا (بيانات كل واحد لوحده). النسخة المدفوعة بتفتحلك عدد غير محدود.</p>
+        <p><b>🔥 الإحماء الموجّه:</b> قبل أول تمرين، دوس "إحماء" وهيديك خطوات تنشيط مناسبة.</p>
+        <p><b>➕ تمارين مخصصة:</b> مش لاقي تمرين في المكتبة؟ تقدر تضيفه بنفسك وترفعله GIF خاص بيك.</p>
+        <p><b>📄 تصدير PDF:</b> بعد أي تمرين تقدر تحمّله PDF كامل بكل التفاصيل.</p>
+        <p><b>☁️ المزامنة:</b> بياناتك بتتزامن مع السيرفر — تفتح حسابك من أي جهاز تاني وتلاقي كل حاجة زي ما سيبتها.</p>
+      </div>
+    </div>
+
+    <button class="btn btn-gold btn-full" style="margin-top:18px" onclick="closeOnboardingGuide()">تمام، يلا نبدأ 💪</button>
+  </div>
+</div>
+
 <!-- ===== CODE LOGIN SCREEN ===== -->
 <div id="code-screen">
   <div style="width:56px;height:56px;margin:0 auto 12px;color:var(--gold2);filter:drop-shadow(0 0 16px rgba(41,121,255,0.5))"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 6.5h11M6.5 17.5h11M4 12h2m12 0h2M6 9.5V14.5M18 9.5V14.5"/></svg></div>
@@ -2966,7 +3027,7 @@ var _swReg = null;
     <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);flex-shrink:0">
       <div class="modal-handle" style="margin-bottom:10px"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-        <div class="modal-title" style="margin-bottom:0"><span style="display:inline-flex;width:14px;height:14px;vertical-align:-2px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span> اختار تمرين</div>
+        <div class="modal-title" id="wlib-modal-title" style="margin-bottom:0"><span style="display:inline-flex;width:14px;height:14px;vertical-align:-2px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg></span> اختار تمرين</div>
         <button onclick="closeModal('workout-lib-modal')" style="background:var(--bg3);border:1px solid var(--border);color:var(--text-muted);border-radius:8px;padding:6px 12px;cursor:pointer;font-family:var(--font-mono);font-size:12px">✕</button>
       </div>
       <!-- Search -->
@@ -3729,7 +3790,10 @@ function renderPPL() {
             ondrop="drop(event,'${currentPPL}',${di},${ei})">
             <span class="exercise-item-name">${ex.nameAr || ex.name}</span>
             <span class="exercise-item-meta">${ex.muscle}</span>
-            <button class="icon-btn" onclick="removeExercise('${currentPPL}',${di},'${ex.id}')">
+            ${ex.gif ? `<button class="icon-btn" title="شوف حركة التمرين" onclick="openExGifDirect('${ex.gif}','${(ex.nameAr||ex.name).replace(/'/g,"\\'")}')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>` : ''}
+            <button class="icon-btn-danger" title="حذف التمرين" onclick="removeExercise('${currentPPL}',${di},'${ex.id}')">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>`).join('')}
@@ -3766,7 +3830,11 @@ async function editDayName(ppl, di) {
   showToast(`✓ اتغير لـ "${newName.trim()}"`);
 }
 
-function removeExercise(ppl, di, exId) {
+async function removeExercise(ppl, di, exId) {
+  const ex = EXERCISES_DB.find(e => e.id === exId);
+  const name = ex ? (ex.nameAr || ex.name) : 'التمرين';
+  const ok = await appConfirmDanger(`تحذف "${name}" من اليوم ده؟`);
+  if (!ok) return;
   state.schedule[ppl][di].exercises = state.schedule[ppl][di].exercises.filter(id => id !== exId);
   saveState();
   renderPPL();
@@ -3833,6 +3901,19 @@ function openAddToActiveWorkout(ei) {
   _wlibTarget = { activeEi: ei !== undefined ? ei : true };
   _wlibMuscle = 'All';
   document.getElementById('wlib-search').value = '';
+  const t = document.getElementById('wlib-modal-title');
+  if (t) t.innerHTML = t.innerHTML.replace(/(اختار تمرين|استبدل التمرين)/, 'اختار تمرين');
+  renderWorkoutLib();
+  document.getElementById('workout-lib-modal').classList.add('open');
+}
+
+function openSwapExercise(ei) {
+  // استبدال تمرين جوه التمرين النشط بواحد تاني من المكتبة
+  _wlibTarget = { swapEi: ei };
+  _wlibMuscle = 'All';
+  document.getElementById('wlib-search').value = '';
+  const t = document.getElementById('wlib-modal-title');
+  if (t) t.innerHTML = t.innerHTML.replace(/(اختار تمرين|استبدل التمرين)/, 'استبدل التمرين');
   renderWorkoutLib();
   document.getElementById('workout-lib-modal').classList.add('open');
 }
@@ -3868,7 +3949,15 @@ function renderWorkoutLib() {
 
   // Get already-added exercises for current target
   let addedIds = new Set();
-  if (_wlibTarget && !_wlibTarget.activeEi) {
+  if (_wlibTarget && _wlibTarget.activeEi !== undefined) {
+    addedIds = new Set((activeWorkout?.exercises || []).map(e => e.id));
+  } else if (_wlibTarget && _wlibTarget.swapEi !== undefined) {
+    addedIds = new Set(
+      (activeWorkout?.exercises || [])
+        .filter((_, idx) => idx !== _wlibTarget.swapEi)
+        .map(e => e.id)
+    );
+  } else if (_wlibTarget && _wlibTarget.ppl !== undefined) {
     const { ppl, di } = _wlibTarget;
     addedIds = new Set(state.schedule[ppl]?.[di]?.exercises || []);
   }
@@ -3906,6 +3995,25 @@ function renderWorkoutLib() {
 
 function wlibSelectEx(exId) {
   if (!_wlibTarget) return;
+
+  if (_wlibTarget.swapEi !== undefined) {
+    // استبدال تمرين موجود بواحد جديد من المكتبة
+    const ei = _wlibTarget.swapEi;
+    const newEx = EXERCISES_DB.find(e => e.id === exId);
+    if (!newEx || !activeWorkout || !activeWorkout.exercises[ei]) return;
+    const oldName = activeWorkout.exercises[ei].name;
+    const oldRest = activeWorkout.exercises[ei].restTime || 90;
+    activeWorkout.exercises[ei] = {
+      id: newEx.id, name: newEx.nameAr || newEx.name, muscle: newEx.muscle, gif: newEx.gif || '',
+      sets: getLastSetsForExercise(newEx.id), restTime: oldRest, note: ''
+    };
+    state.activeWorkout = activeWorkout;
+    saveState();
+    closeModal('workout-lib-modal');
+    renderActiveExercises();
+    showToast(`✓ استُبدل ${oldName} بـ ${newEx.nameAr || newEx.name}`);
+    return;
+  }
 
   if (_wlibTarget.activeEi !== undefined) {
     // أضف للتمرين النشط
@@ -4379,7 +4487,10 @@ function renderActiveExercises() {
           </div>
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0">
-          <button onclick="openGuidedWarmup(${ei})" style="background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.25);color:var(--gold);border-radius:8px;padding:5px 10px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px">${ei===0?'🔥 إحماء':'⚡ تنشيط'}</button>
+          <div style="display:flex;gap:6px">
+            <button onclick="openGuidedWarmup(${ei})" style="background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.25);color:var(--gold);border-radius:8px;padding:5px 10px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px">${ei===0?'🔥 إحماء':'⚡ تنشيط'}</button>
+            <button onclick="openSwapExercise(${ei})" title="استبدل التمرين ده بواحد تاني" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-muted);border-radius:8px;padding:5px 8px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer">🔄</button>
+          </div>
           <select onchange="setExRestTime(${ei},this.value)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 6px;font-family:var(--font-mono);font-size:11px">
             ${[30,60,90,120,180,240].map(s=>`<option value="${s}" ${(ex.restTime||90)==s?'selected':''}>${s}s</option>`).join('')}
           </select>
@@ -6175,6 +6286,18 @@ function confirmFirstGym() {
   renderDash();
   renderGymsSettings();
   scheduleSyncToCloud();
+  document.getElementById('onboarding-modal').classList.add('open');
+}
+
+function showGuideTab(tab) {
+  document.getElementById('guide-beginner').style.display = tab === 'beginner' ? 'block' : 'none';
+  document.getElementById('guide-pro').style.display = tab === 'pro' ? 'block' : 'none';
+  document.getElementById('guide-tab-beginner').classList.toggle('active', tab === 'beginner');
+  document.getElementById('guide-tab-pro').classList.toggle('active', tab === 'pro');
+}
+
+function closeOnboardingGuide() {
+  document.getElementById('onboarding-modal').classList.remove('open');
 }
 
 // ============================================================
