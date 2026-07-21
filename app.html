@@ -116,6 +116,60 @@ body::before {
   overflow: hidden;
 }
 
+/* ── DESKTOP: MOBILE PREVIEW MODE ── */
+@media (min-width: 900px) {
+  #desktop-mobile-toggle {
+    display: flex;
+  }
+  body.desktop-phone-frame {
+    background: #0a0a0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    overflow: auto;
+    padding: 24px 0;
+  }
+  body.desktop-phone-frame #app {
+    width: 402px;
+    height: 874px;
+    flex: none;
+    margin: auto;
+    border: 10px solid #1a1a1a;
+    border-radius: 46px;
+    box-shadow: 0 0 0 2px #333, 0 40px 90px rgba(0,0,0,.65);
+    overflow: hidden;
+  }
+  body.desktop-phone-frame #loading-screen {
+    width: 402px;
+    height: 874px;
+    margin: auto;
+    border: 10px solid #1a1a1a;
+    border-radius: 46px;
+    box-shadow: 0 0 0 2px #333, 0 40px 90px rgba(0,0,0,.65);
+  }
+}
+#desktop-mobile-toggle {
+  display: none;
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 9999;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--border-bright);
+  color: var(--gold);
+  border-radius: 10px;
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+}
+#desktop-mobile-toggle:hover { border-color: var(--gold); }
+
 #content {
   flex: 1;
   overflow-y: auto;
@@ -2343,6 +2397,25 @@ var _swReg = null;
 </script>
 </head>
 <body>
+
+<button id="desktop-mobile-toggle" onclick="toggleDesktopMobilePreview()">📱 <span id="desktop-mobile-toggle-label">عرض الموبايل</span></button>
+<script>
+(function() {
+  function applyLabel(on) {
+    const l = document.getElementById('desktop-mobile-toggle-label');
+    if (l) l.textContent = on ? 'عرض عادي' : 'عرض الموبايل';
+  }
+  window.toggleDesktopMobilePreview = function() {
+    const on = document.body.classList.toggle('desktop-phone-frame');
+    localStorage.setItem('tamreeni_desktop_phone_frame', on ? '1' : '0');
+    applyLabel(on);
+  };
+  if (window.innerWidth >= 900 && localStorage.getItem('tamreeni_desktop_phone_frame') === '1') {
+    document.body.classList.add('desktop-phone-frame');
+    applyLabel(true);
+  }
+})();
+</script>
 
 <div id="loading-screen">
   <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px">
