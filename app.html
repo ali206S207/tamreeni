@@ -3516,6 +3516,8 @@ function setActiveProgram(id) {
     state.programSchedules[id] = JSON.parse(JSON.stringify(prog.schedule));
   }
   state.schedule = state.programSchedules[id];
+  // إلغاء تفعيل أي برنامج مخصص كان شغال، عشان عنوان الصفحة ما يفضلش عالق على الاسم القديم
+  (state.programs || []).forEach(p => p.active = false);
   saveState();
   updateWorkoutTabsForProgram();
   renderPrograms();
