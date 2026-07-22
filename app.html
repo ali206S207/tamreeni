@@ -170,6 +170,47 @@ body::before {
 }
 #desktop-mobile-toggle:hover { border-color: var(--gold); }
 
+/* ── INSTALL NUDGE BANNER (يظهر لو مش متثبت) ── */
+#install-nudge {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100000;
+  background: linear-gradient(135deg,var(--gold),var(--gold2));
+  color: #fff;
+  padding: 10px 14px;
+  font-family: var(--font-main);
+  font-size: 12.5px;
+  font-weight: 700;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.35);
+}
+#install-nudge.show { display: flex; }
+#install-nudge .txt { flex: 1; line-height: 1.5 }
+#install-nudge button.act {
+  background: rgba(0,0,0,0.25);
+  border: none;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+}
+#install-nudge button.x {
+  background: none;
+  border: none;
+  color: #fff;
+  opacity: .8;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
 #content {
   flex: 1;
   overflow-y: auto;
@@ -2399,6 +2440,12 @@ var _swReg = null;
 <body>
 
 <button id="desktop-mobile-toggle" onclick="toggleDesktopMobilePreview()">📱 <span id="desktop-mobile-toggle-label">عرض الموبايل</span></button>
+
+<div id="install-nudge">
+  <span class="txt" id="install-nudge-text">📲 ثبّت تمرينتي على جهازك عشان تفتحه بسرعة زي أي تطبيق تاني</span>
+  <button class="act" id="install-nudge-btn" onclick="handleInstallNudgeClick()">ثبّت الآن</button>
+  <button class="x" onclick="dismissInstallNudge()">✕</button>
+</div>
 <script>
 (function() {
   function applyLabel(on) {
@@ -2410,9 +2457,49 @@ var _swReg = null;
     localStorage.setItem('tamreeni_desktop_phone_frame', on ? '1' : '0');
     applyLabel(on);
   };
-  if (window.innerWidth >= 900 && localStorage.getItem('tamreeni_desktop_phone_frame') === '1') {
+  if (window.innerWidth >= 700 && localStorage.getItem('tamreeni_desktop_phone_frame') === '1') {
     document.body.classList.add('desktop-phone-frame');
     applyLabel(true);
+  }
+
+  // ── INSTALL NUDGE ──
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  let localDeferredPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    localDeferredPrompt = e;
+  });
+
+  window.handleInstallNudgeClick = function() {
+    if (localDeferredPrompt) {
+      localDeferredPrompt.prompt();
+      localDeferredPrompt.userChoice.then(() => {
+        localDeferredPrompt = null;
+        dismissInstallNudge();
+      });
+    } else if (isIOS) {
+      document.getElementById('install-nudge-text').textContent =
+        '📲 دوس زر المشاركة ⬆️ تحت في المتصفح، بعدين اختار "إضافة إلى الشاشة الرئيسية"';
+      document.getElementById('install-nudge-btn').style.display = 'none';
+    } else {
+      document.getElementById('install-nudge-text').textContent =
+        '📲 افتح قائمة المتصفح (⋮) واختار "تثبيت التطبيق" أو "Add to Home screen"';
+      document.getElementById('install-nudge-btn').style.display = 'none';
+    }
+  };
+
+  window.dismissInstallNudge = function() {
+    document.getElementById('install-nudge').classList.remove('show');
+    sessionStorage.setItem('tamreeni_install_nudge_dismissed', '1');
+  };
+
+  if (!isStandalone && !sessionStorage.getItem('tamreeni_install_nudge_dismissed')) {
+    setTimeout(() => {
+      if (isIOS) document.getElementById('install-nudge-btn').textContent = 'إزاي؟';
+      document.getElementById('install-nudge').classList.add('show');
+    }, 1200);
   }
 })();
 </script>
@@ -2905,7 +2992,8 @@ var _swReg = null;
         <div class="workout-header-title" id="aw-title">// التمرين</div>
         <div class="workout-header-day" id="aw-day"></div>
       </div>
-      <div style="display:flex;gap:8px;flex-shrink:0">
+      <div style="display:flex;gap:8px;flex-shrink:0;align-items:center">
+        <div id="aw-timer-mini" style="font-family:var(--font-mono);font-size:13px;font-weight:800;color:var(--gold);background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.3);border-radius:8px;padding:6px 10px;white-space:nowrap">00:00:00</div>
         <button onclick="openAddToActiveWorkout()" style="background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.3);color:var(--gold);border-radius:10px;padding:9px 14px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 0 10px var(--glow);white-space:nowrap">+ تمرين</button>
         <button onclick="stopWorkout()" style="background:rgba(224,48,48,0.12);border:1px solid rgba(224,48,48,0.3);color:var(--red);border-radius:10px;padding:9px 14px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">✕</button>
       </div>
@@ -2939,6 +3027,15 @@ var _swReg = null;
 
   <!-- Finish button (fixed bottom) -->
   <button class="finish-workout-btn" onclick="finishWorkout()"><span style="display:inline-flex;width:14px;height:14px;vertical-align:-2px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg></span> إنهاء التمرين</button>
+</div>
+
+<!-- ===== REST TIME PICKER (بديل الـ select الافتراضي) ===== -->
+<div class="modal-overlay" id="rest-time-modal" style="align-items:flex-end;z-index:10001" onclick="if(event.target===this) closeModal('rest-time-modal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">⏱ وقت الراحة بين السيتات</div>
+    <div id="rest-time-options" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px"></div>
+  </div>
 </div>
 
 <!-- APP DIALOG (بديل alert/confirm/prompt المتصفح) -->
@@ -4564,9 +4661,10 @@ function renderActiveExercises() {
             <button onclick="openGuidedWarmup(${ei})" style="background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.25);color:var(--gold);border-radius:8px;padding:5px 10px;font-family:var(--font-mono);font-size:10px;font-weight:700;cursor:pointer;letter-spacing:1px">${ei===0?'🔥 إحماء':'⚡ تنشيط'}</button>
             <button onclick="openSwapExercise(${ei})" title="استبدل التمرين ده بواحد تاني" style="background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-muted);border-radius:8px;padding:5px 8px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer">🔄</button>
           </div>
-          <select onchange="setExRestTime(${ei},this.value)" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:4px 6px;font-family:var(--font-mono);font-size:11px">
-            ${[30,60,90,120,180,240].map(s=>`<option value="${s}" ${(ex.restTime||90)==s?'selected':''}>${s}s</option>`).join('')}
-          </select>
+          <button id="rest-time-btn-${ei}" onclick="openRestTimePicker(${ei})" style="background:var(--bg3);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
+            <span style="display:inline-flex;width:12px;height:12px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span>
+            ${ex.restTime || 90}s
+          </button>
         </div>
       </div>
       ${buildLastSessionBanner(ex.id)}
@@ -4689,6 +4787,29 @@ function setExRestTime(ei, val) {
   saveState();
 }
 
+let _restPickerEi = null;
+
+function openRestTimePicker(ei) {
+  _restPickerEi = ei;
+  const current = activeWorkout.exercises[ei].restTime || 90;
+  const options = [30, 45, 60, 90, 120, 150, 180, 240, 300];
+  document.getElementById('rest-time-options').innerHTML = options.map(s => `
+    <button onclick="selectRestTime(${s})" style="background:${s===current?'rgba(41,121,255,0.15)':'var(--bg3)'};border:1px solid ${s===current?'var(--gold)':'var(--border)'};color:${s===current?'var(--gold)':'var(--text)'};border-radius:10px;padding:14px 6px;font-family:var(--font-mono);font-size:14px;font-weight:800;cursor:pointer">
+      ${s < 60 ? s + 's' : (s % 60 === 0 ? (s/60) + 'm' : Math.floor(s/60) + 'm ' + (s%60) + 's')}
+    </button>
+  `).join('');
+  document.getElementById('rest-time-modal').classList.add('open');
+}
+
+function selectRestTime(seconds) {
+  const ei = _restPickerEi;
+  if (ei === null) return;
+  setExRestTime(ei, seconds);
+  const btn = document.getElementById(`rest-time-btn-${ei}`);
+  if (btn) btn.innerHTML = `<span style="display:inline-flex;width:12px;height:12px" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span> ${seconds}s`;
+  closeModal('rest-time-modal');
+}
+
 function cycleSetType(ei, si) {
   const s = activeWorkout.exercises[ei].sets[si];
   const types = [undefined, 'superset', 'dropset', 'warmup'];
@@ -4787,6 +4908,8 @@ function startWorkoutTimer() {
     if (!workoutStartTime) return;
     const elapsed = Math.floor((Date.now() - workoutStartTime) / 1000);
     document.getElementById('aw-timer').textContent = formatTime(elapsed);
+    const mini = document.getElementById('aw-timer-mini');
+    if (mini) mini.textContent = formatTime(elapsed);
   }, 1000);
 }
 
