@@ -2596,7 +2596,7 @@ var _swReg = null;
     <!-- WORKOUT PAGE -->
     <div id="page-workout" class="page">
       <div class="page-header">
-        <div class="page-title">تمارين <span class="gold">PPL</span></div>
+        <div class="page-title">تمارين <span class="gold" id="workout-page-program-name">PPL</span></div>
       </div>
 
       <div class="ppl-tabs" id="ppl-tabs">
@@ -3919,6 +3919,17 @@ function renderPPL() {
     // استخرج اسم الـ tab من أول يوم فيه لو مش PPL افتراضي
     const defaultLabels = { push: 'PUSH', pull: 'PULL', legs: 'LEGS' };
     const activeProg = (state.programs || []).find(p => p.active);
+
+    // حدّث عنوان الصفحة باسم البرنامج الفعلي بدل PPL الثابت
+    const titleEl = document.getElementById('workout-page-program-name');
+    if (titleEl) {
+      if (activeProg && activeProg.name) {
+        titleEl.textContent = activeProg.name;
+      } else {
+        const builtIn = TRAINING_PROGRAMS.find(p => p.id === activeProgramId);
+        titleEl.textContent = builtIn ? builtIn.nameShort : 'PPL';
+      }
+    }
     tabsContainer.innerHTML = tabs.map(tab => {
       let label = defaultLabels[tab] || tab.toUpperCase();
       // لو في برنامج نشط وعنده dayNames — استخدم أول يوم كاسم للـ tab
