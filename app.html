@@ -2397,6 +2397,12 @@ body::before {
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
 <script>
+// كشف إننا شغالين جوه تطبيق أندرويد الأصلي (Capacitor) ولا في المتصفح/الويب — عشان ميزات زي الـ gestures تتفعّل هناك بس ومتأثرش على نسخة الويب/آيفون
+window.isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
+if (window.isNativeApp) document.documentElement.classList.add('is-native-app');
+</script>
+
+<script>
 // PWA: register real service worker + auto-update
 var _swReg = null;
 (function() {
@@ -2463,7 +2469,7 @@ var _swReg = null;
   }
 
   // ── INSTALL NUDGE ──
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  const isStandalone = window.isNativeApp || window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   let localDeferredPrompt = null;
 

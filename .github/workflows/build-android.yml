@@ -4,6 +4,8 @@ on:
   push:
     branches: [main]
     paths:
+      - 'app.html'
+      - 'manifest.json'
       - 'mobile/**'
       - '.github/workflows/build-android.yml'
   workflow_dispatch: {}
@@ -33,6 +35,13 @@ jobs:
 
       - name: Install web deps
         run: npm install
+
+      - name: Copy latest web app into Capacitor (single source of truth)
+        run: |
+          cp ../app.html www/index.html
+          cp ../manifest.json www/manifest.json || true
+          cp ../logo.png ../icon-192.png ../icon-512.png www/ || true
+          rm -rf www/gifs && cp -r ../gifs www/gifs || true
 
       - name: Sync web assets into Android project
         run: npx cap sync android
