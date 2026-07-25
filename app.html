@@ -5053,6 +5053,7 @@ function toggleSetDone(ei, si) {
     if (_bstInterval) { clearInterval(_bstInterval); _bstInterval = null; }
     _bstEndTime = null;
     sendToSW({ type: 'CANCEL_REST' });
+    cancelNativeRest();
     const strip = document.getElementById(`bst-${ei}-${si}`);
     const fill  = document.getElementById(`bst-fill-${ei}-${si}`);
     const label = document.getElementById(`bst-label-${ei}-${si}`);
@@ -5195,7 +5196,7 @@ function startBetweenSetTimer(ei, si, seconds) {
   // Clear any existing timer
   if (_bstInterval) clearInterval(_bstInterval);
   sendToSW({ type: 'START_REST', seconds, icon: '' });
-
+  scheduleNativeRest(seconds, '⏱ خلصت الراحة', 'ابدأ السيت الجديد!');
   _bstTotal = seconds;
   _bstEndTime = Date.now() + seconds * 1000;
 
@@ -5221,6 +5222,7 @@ function startBetweenSetTimer(ei, si, seconds) {
       if (navigator.vibrate) navigator.vibrate([150, 60, 150]);
       strip.classList.remove('active');
       sendToSW({ type: 'CANCEL_REST' });
+      cancelNativeRest();
     }
   };
   tick();
@@ -5232,8 +5234,7 @@ function showRestTimer(seconds = 90) {
   restEndTime = Date.now() + seconds * 1000;
 
   sendToSW({ type: 'START_REST', seconds, icon: document.getElementById('apple-icon')?.href || '' });
-
-  // Open the rest modal
+  scheduleNativeRest(seconds, '⏱ خلصت الراحة', 'ابدأ السيت الجديد!');
   document.getElementById('rest-modal').classList.add('open');
   document.getElementById('rest-time-text').textContent = seconds;
   updateRestCircle(seconds, seconds);
@@ -5307,6 +5308,7 @@ function adjustRest(delta) {
   if (restEndTime < Date.now() + 5000) restEndTime = Date.now() + 5000;
   const newSecs = Math.round((restEndTime - Date.now()) / 1000);
   sendToSW({ type: 'START_REST', seconds: newSecs, icon: document.getElementById('apple-icon')?.href || '' });
+  scheduleNativeRest(newSecs, '⏱ خلصت الراحة', 'ابدأ السيت الجديد!');
   document.getElementById('rest-time-text').textContent = newSecs;
   updateRestCircle(newSecs, restTotal);
 }
@@ -5315,6 +5317,7 @@ function skipRest() {
   clearInterval(restTimerInterval);
   restEndTime = null;
   sendToSW({ type: 'CANCEL_REST' });
+  cancelNativeRest();
   const bar = document.getElementById('inline-rest-bar');
   if (bar) bar.style.display = 'none';
   document.getElementById('rest-modal').classList.remove('open');
@@ -6001,6 +6004,45 @@ function sendToSW(msg) {
     _swReg = reg;
     reg.active && reg.active.postMessage(msg);
   });
+}
+
+// ── تايمر الراحة كإشعار نظام حقيقي أوفلاين (تطبيق الأندرويد بس) ──
+const NATIVE_REST_NOTIF_ID = 778821;
+let _nativeNotifPermAsked = false;
+
+function _getLocalNotifPlugin() {
+  return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.LocalNotifications) || null;
+}
+
+async function scheduleNativeRest(seconds, title, body) {
+  if (!window.isNativeApp) return;
+  const LN = _getLocalNotifPlugin();
+  if (!LN) return;
+  try {
+    if (!_nativeNotifPermAsked) {
+      _nativeNotifPermAsked = true;
+      const perm = await LN.checkPermissions();
+      if (perm.display !== 'granted') await LN.requestPermissions();
+    }
+    await LN.cancel({ notifications: [{ id: NATIVE_REST_NOTIF_ID }] });
+    await LN.schedule({
+      notifications: [{
+        id: NATIVE_REST_NOTIF_ID,
+        title,
+        body,
+        schedule: { at: new Date(Date.now() + seconds * 1000) },
+        sound: undefined,
+        smallIcon: 'ic_launcher',
+      }]
+    });
+  } catch (e) { console.warn('scheduleNativeRest failed', e); }
+}
+
+async function cancelNativeRest() {
+  if (!window.isNativeApp) return;
+  const LN = _getLocalNotifPlugin();
+  if (!LN) return;
+  try { await LN.cancel({ notifications: [{ id: NATIVE_REST_NOTIF_ID }] }); } catch (e) {}
 }
 
 function requestNotifPermission() {
