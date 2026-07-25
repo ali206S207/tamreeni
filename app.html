@@ -1637,7 +1637,44 @@ html.is-native-app .nav-more-btn { display: flex; }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.page.active { animation: fadeIn .2s ease; }
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes sheetSlideUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page.active { animation: fadeSlideUp .3s cubic-bezier(.16,1,.3,1); }
+
+/* عناصر القوائم بتظهر بحركة متتابعة بدل ما تطلع فجأة */
+.exercise-item,
+.active-exercise-card,
+.lib-exercise-item,
+.gym-card,
+.program-card {
+  animation: fadeSlideUp .35s cubic-bezier(.16,1,.3,1) both;
+}
+.exercise-item:nth-child(1),  .active-exercise-card:nth-child(1),  .lib-exercise-item:nth-child(1)  { animation-delay: .02s; }
+.exercise-item:nth-child(2),  .active-exercise-card:nth-child(2),  .lib-exercise-item:nth-child(2)  { animation-delay: .06s; }
+.exercise-item:nth-child(3),  .active-exercise-card:nth-child(3),  .lib-exercise-item:nth-child(3)  { animation-delay: .10s; }
+.exercise-item:nth-child(4),  .active-exercise-card:nth-child(4),  .lib-exercise-item:nth-child(4)  { animation-delay: .14s; }
+.exercise-item:nth-child(5),  .active-exercise-card:nth-child(5),  .lib-exercise-item:nth-child(5)  { animation-delay: .18s; }
+.exercise-item:nth-child(6),  .active-exercise-card:nth-child(6),  .lib-exercise-item:nth-child(6)  { animation-delay: .22s; }
+.exercise-item:nth-child(7),  .active-exercise-card:nth-child(7),  .lib-exercise-item:nth-child(7)  { animation-delay: .26s; }
+.exercise-item:nth-child(8),  .active-exercise-card:nth-child(8),  .lib-exercise-item:nth-child(8)  { animation-delay: .30s; }
+.exercise-item:nth-child(n+9),.active-exercise-card:nth-child(n+9),.lib-exercise-item:nth-child(n+9) { animation-delay: .32s; }
+
+/* المودالات بقت بتنزلق وتظهر بدل ما تطلع فجأة */
+.modal-overlay.open { animation: overlayFadeIn .2s ease; }
+.modal-overlay.open .modal-sheet { animation: sheetSlideUp .32s cubic-bezier(.16,1,.3,1); }
 
 .drag-over { border-color: var(--gold) !important; background: rgba(232,160,32,0.05) !important; }
 
