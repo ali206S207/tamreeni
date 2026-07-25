@@ -16,6 +16,14 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            storeFile System.getenv('TAMREENI_KEYSTORE_PATH') ? file(System.getenv('TAMREENI_KEYSTORE_PATH')) : null
+            storePassword System.getenv('TAMREENI_KEYSTORE_PASSWORD')
+            keyAlias System.getenv('TAMREENI_KEY_ALIAS')
+            keyPassword System.getenv('TAMREENI_KEY_PASSWORD')
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
@@ -23,14 +31,6 @@ android {
             if (System.getenv('TAMREENI_KEYSTORE_PATH')) {
                 signingConfig signingConfigs.release
             }
-        }
-    }
-    signingConfigs {
-        release {
-            storeFile System.getenv('TAMREENI_KEYSTORE_PATH') ? file(System.getenv('TAMREENI_KEYSTORE_PATH')) : null
-            storePassword System.getenv('TAMREENI_KEYSTORE_PASSWORD')
-            keyAlias System.getenv('TAMREENI_KEY_ALIAS')
-            keyPassword System.getenv('TAMREENI_KEY_PASSWORD')
         }
     }
 }
