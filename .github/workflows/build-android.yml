@@ -45,7 +45,7 @@ jobs:
       - name: Build release APK
         working-directory: mobile/android
         env:
-          TAMREENI_KEYSTORE_PATH: app/tamreeni-release.keystore
+          TAMREENI_KEYSTORE_PATH: tamreeni-release.keystore
           TAMREENI_KEYSTORE_PASSWORD: ${{ secrets.TAMREENI_KEYSTORE_PASSWORD }}
           TAMREENI_KEY_ALIAS: ${{ secrets.TAMREENI_KEY_ALIAS }}
           TAMREENI_KEY_PASSWORD: ${{ secrets.TAMREENI_KEY_PASSWORD }}
