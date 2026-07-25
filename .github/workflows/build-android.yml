@@ -1,0 +1,82 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mobile/**'
+      - '.github/workflows/build-android.yml'
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install web deps
+        run: npm install
+
+      - name: Sync web assets into Android project
+        run: npx cap sync android
+
+      - name: Decode release keystore
+        run: |
+          echo "${{ secrets.TAMREENI_KEYSTORE_BASE64 }}" | base64 -d > android/app/tamreeni-release.keystore
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build release APK
+        working-directory: mobile/android
+        env:
+          TAMREENI_KEYSTORE_PATH: app/tamreeni-release.keystore
+          TAMREENI_KEYSTORE_PASSWORD: ${{ secrets.TAMREENI_KEYSTORE_PASSWORD }}
+          TAMREENI_KEY_ALIAS: ${{ secrets.TAMREENI_KEY_ALIAS }}
+          TAMREENI_KEY_PASSWORD: ${{ secrets.TAMREENI_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Remove keystore from workspace
+        if: always()
+        run: rm -f android/app/tamreeni-release.keystore
+
+      - name: Rename APK with version
+        working-directory: mobile
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/release/app-release.apk out/tamreeni-${{ github.run_number }}.apk
+          cp android/app/build/outputs/apk/release/app-release.apk out/tamreeni-latest.apk
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tamreeni-android-apk
+          path: mobile/out/*.apk
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-latest
+          name: تمرينتي — أحدث نسخة أندرويد
+          body: |
+            آخر نسخة APK لتطبيق تمرينتي على أندرويد.
+            حمّل الملف اللي اسمه tamreeni-latest.apk وثبّته على جهازك (لازم تسمح بالتثبيت من مصادر غير معروفة).
+          files: mobile/out/*.apk
+          make_latest: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

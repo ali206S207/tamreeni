@@ -1,0 +1,17 @@
+{
+  "name": "tamreeni-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "تمرينتي — Android app wrapper (Capacitor)",
+  "scripts": {
+    "sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/cli": "^6.2.1",
+    "@capacitor/core": "^6.2.1"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5"
+  }
+}

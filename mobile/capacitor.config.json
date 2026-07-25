@@ -1,0 +1,11 @@
+{
+  "appId": "com.tamreeni.app",
+  "appName": "تمرينتي",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
