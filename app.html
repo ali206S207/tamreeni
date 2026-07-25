@@ -6054,96 +6054,47 @@ async function cancelNativeRest() {
   try { await LN.cancel({ notifications: [{ id: NATIVE_REST_NOTIF_ID }] }); } catch (e) {}
 }
 
-// ── بار إشعار ثابت طول التمرين (مدة التمرين + الراحة) — أدق من التنبيه المجدول لأنه بيتحدث بشكل حي بدل ما يستنى معاد واحد بالظبط ──
-const NATIVE_BAR_ID = 778823;
-let _nativeBarInterval = null;
-let _nativeBarMode = 'workout'; // 'workout' | 'rest'
-let _nativeBarRestEnd = null;
-let _nativeBarRestRang = false;
-
-async function _pushNativeBar(title, body, ongoing) {
-  const LN = _getLocalNotifPlugin();
-  if (!LN) return;
-  try {
-    await LN.schedule({
-      notifications: [{
-        id: NATIVE_BAR_ID,
-        title, body,
-        ongoing: !!ongoing,
-        autoCancel: false,
-        smallIcon: 'ic_launcher',
-        schedule: { at: new Date(Date.now() + 300) },
-      }]
-    });
-  } catch (e) { console.warn('_pushNativeBar failed', e); }
-}
-
-function _nativeBarTick() {
-  if (_nativeBarMode === 'rest' && _nativeBarRestEnd) {
-    const rem = Math.round((_nativeBarRestEnd - Date.now()) / 1000);
-    if (rem <= 0) {
-      if (!_nativeBarRestRang) {
-        _nativeBarRestRang = true;
-        if (navigator.vibrate) navigator.vibrate([250, 90, 250, 90, 250]);
-        playRestEndBeep();
-        _pushNativeBar('✅ خلصت الراحة!', 'ابدأ السيت الجديد', true);
-      }
-      // ارجع لعرض وقت التمرين تلقائي بعد ثواني
-      setTimeout(() => { if (_nativeBarMode === 'rest') setNativeBarWorkoutMode(); }, 4000);
-      return;
-    }
-    _pushNativeBar('🔥 الراحة شغالة', 'متبقي ' + formatTime(rem).replace(/^00:/, ''), true);
-  } else {
-    if (!workoutStartTime) return;
-    const elapsed = Math.floor((Date.now() - workoutStartTime) / 1000);
-    _pushNativeBar('⏱ تمرينتي شغالة', 'مدة التمرين: ' + formatTime(elapsed).replace(/^00:/, ''), true);
-  }
+// ── بار إشعار ثابت طول التمرين (مدة التمرين + الراحة) — بيشتغل من جوه خدمة أندرويد أصلية (Foreground Service)، مش JS، فمش بيتأثر بقفل الشاشة زي ما كان بيحصل قبل كده ──
+function _getWorkoutTimerPlugin() {
+  return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.WorkoutTimer) || null;
 }
 
 async function startNativeWorkoutBar() {
   if (!window.isNativeApp) return;
-  const LN = _getLocalNotifPlugin();
-  if (!LN) return;
+  const WT = _getWorkoutTimerPlugin();
+  if (!WT) return;
   try {
     if (!_nativeNotifPermAsked) {
       _nativeNotifPermAsked = true;
-      const perm = await LN.checkPermissions();
-      if (perm.display !== 'granted') await LN.requestPermissions();
+      const LN = _getLocalNotifPlugin();
+      if (LN) {
+        const perm = await LN.checkPermissions();
+        if (perm.display !== 'granted') await LN.requestPermissions();
+      }
     }
-  } catch (e) {}
-  _nativeBarMode = 'workout';
-  if (_nativeBarInterval) clearInterval(_nativeBarInterval);
-  _nativeBarTick();
-  _nativeBarInterval = setInterval(_nativeBarTick, 15000);
+    await WT.startWorkout();
+  } catch (e) { console.warn('startNativeWorkoutBar failed', e); }
 }
 
 function setNativeBarRestMode(seconds) {
   if (!window.isNativeApp) return;
-  _nativeBarMode = 'rest';
-  _nativeBarRestEnd = Date.now() + seconds * 1000;
-  _nativeBarRestRang = false;
-  if (_nativeBarInterval) clearInterval(_nativeBarInterval);
-  _nativeBarTick();
-  _nativeBarInterval = setInterval(_nativeBarTick, 2000);
+  const WT = _getWorkoutTimerPlugin();
+  if (!WT) return;
+  WT.startRest({ seconds }).catch(() => {});
 }
 
 function setNativeBarWorkoutMode() {
   if (!window.isNativeApp) return;
-  _nativeBarMode = 'workout';
-  _nativeBarRestEnd = null;
-  if (_nativeBarInterval) clearInterval(_nativeBarInterval);
-  _nativeBarTick();
-  _nativeBarInterval = setInterval(_nativeBarTick, 15000);
+  const WT = _getWorkoutTimerPlugin();
+  if (!WT) return;
+  WT.resumeWorkout().catch(() => {});
 }
 
 async function stopNativeWorkoutBar() {
   if (!window.isNativeApp) return;
-  if (_nativeBarInterval) { clearInterval(_nativeBarInterval); _nativeBarInterval = null; }
-  _nativeBarMode = 'workout';
-  _nativeBarRestEnd = null;
-  const LN = _getLocalNotifPlugin();
-  if (!LN) return;
-  try { await LN.cancel({ notifications: [{ id: NATIVE_BAR_ID }] }); } catch (e) {}
+  const WT = _getWorkoutTimerPlugin();
+  if (!WT) return;
+  try { await WT.stop(); } catch (e) {}
 }
 
 function requestNotifPermission() {
