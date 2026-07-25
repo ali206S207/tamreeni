@@ -3,7 +3,9 @@
   "appName": "تمرينتي",
   "webDir": "www",
   "server": {
-    "androidScheme": "https"
+    "url": "https://ali206s207.github.io/app.html",
+    "androidScheme": "https",
+    "cleartext": false
   },
   "android": {
     "allowMixedContent": true
