@@ -2447,6 +2447,42 @@ html.is-native-app .nav-more-btn { display: flex; }
 // كشف إننا شغالين جوه تطبيق أندرويد الأصلي (Capacitor) ولا في المتصفح/الويب — عشان ميزات زي الـ gestures تتفعّل هناك بس ومتأثرش على نسخة الويب/آيفون
 window.isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
 if (window.isNativeApp) document.documentElement.classList.add('is-native-app');
+
+// رقم نسخة النسخة المدمجة جوه التطبيق (بتتحدث يدوي كل ما نبني APK جديد فيه تغييرات مهمة)
+window.APP_VERSION = '1.0.0';
+
+// فحص لو النسخة دي بقت قديمة ولازم تتحدث — بيتفحص بس لو في نت، ولو مفيش نت بيتجاهل تمامًا عشان مستخدمين بدون نت يقدروا يستخدموا التطبيق عادي
+(function checkAppVersionGate() {
+  if (!window.isNativeApp) return; // الفحص ده للتطبيق المثبت (APK) بس، مش للويب
+  const VG_URL = 'https://hukkzltmouigzsnqruxp.supabase.co/rest/v1/app_version_gate?id=eq.1&select=*';
+  const VG_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh1a2t6bHRtb3VpZ3pzbnFydXhwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk3NDA2MTksImV4cCI6MjA5NTMxNjYxOX0.yW3KkhzYF1Hv20DYZfv9Vfdb1InRD_FieH-GMnH94AA';
+  const cmpVer = (a, b) => {
+    const pa = a.split('.').map(Number), pb = b.split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const x = pa[i] || 0, y = pb[i] || 0;
+      if (x !== y) return x - y;
+    }
+    return 0;
+  };
+  fetch(VG_URL, { headers: { apikey: VG_KEY, Authorization: 'Bearer ' + VG_KEY } })
+    .then(r => r.ok ? r.json() : null)
+    .then(rows => {
+      const row = rows && rows[0];
+      if (!row) return;
+      if (cmpVer(window.APP_VERSION, row.min_version) < 0) {
+        const ov = document.createElement('div');
+        ov.style.cssText = 'position:fixed;inset:0;z-index:999999;background:#050810;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;font-family:Cairo,sans-serif;color:#fff';
+        ov.innerHTML = `
+          <div style="font-size:44px;margin-bottom:18px">🔄</div>
+          <div style="font-size:17px;font-weight:800;margin-bottom:10px">في نسخة جديدة من تمرينتي</div>
+          <div style="font-size:13.5px;color:rgba(255,255,255,0.6);margin-bottom:26px;max-width:320px;line-height:1.8">${row.message || 'حمّل آخر نسخة عشان تكمل استخدام التطبيق'}</div>
+          <a href="${row.download_url}" style="background:#2979FF;color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:800;font-size:14px">تحميل التحديث</a>
+        `;
+        document.body.appendChild(ov);
+      }
+    })
+    .catch(() => { /* مفيش نت — نتجاهل الفحص ونسيب المستخدم يكمل عادي */ });
+})();
 </script>
 
 <script>
