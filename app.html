@@ -234,6 +234,53 @@ body::before {
 }
 #nav::-webkit-scrollbar { display: none; }
 
+/* ── NATIVE APP: bottom nav مضغوط زي التطبيقات الحقيقية (بدون سكرول) ── */
+html.is-native-app #nav {
+  overflow-x: visible;
+  gap: 0;
+}
+html.is-native-app .nav-more-item { display: none !important; }
+.nav-more-btn { display: none; }
+html.is-native-app .nav-more-btn { display: flex; }
+
+#more-sheet-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  background: rgba(0,0,0,0.85);
+  align-items: flex-end;
+  justify-content: center;
+}
+#more-sheet-overlay.open { display: flex; }
+#more-sheet {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  padding: 10px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+.more-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 14px 6px;
+  font-family: var(--font-main);
+  font-size: 14.5px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+}
+.more-sheet-item:last-child { border-bottom: none; }
+.more-sheet-item svg { width: 20px; height: 20px; color: var(--gold); flex-shrink: 0; }
+
 .nav-btn {
   flex: 1 0 auto;
   min-width: 40px;
@@ -2727,7 +2774,7 @@ var _swReg = null;
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5h11M6.5 17.5h11M4 12h2m12 0h2M6 9.5V14.5M18 9.5V14.5"/></svg>
       تمارين
     </button>
-    <button class="nav-btn" data-page="library" onclick="navigate('library')">
+    <button class="nav-btn nav-more-item" data-page="library" onclick="navigate('library')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
       مكتبة
     </button>
@@ -2739,23 +2786,53 @@ var _swReg = null;
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
       تقدم
     </button>
-    <button class="nav-btn" data-page="log" onclick="navigate('log')">
+    <button class="nav-btn nav-more-item" data-page="log" onclick="navigate('log')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       سجل
     </button>
-    <button class="nav-btn" data-page="gyms" onclick="navigate('gyms')">
+    <button class="nav-btn nav-more-item" data-page="gyms" onclick="navigate('gyms')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       الجيم
     </button>
-    <button class="nav-btn" data-page="account" onclick="navigate('account')">
+    <button class="nav-btn nav-more-item" data-page="account" onclick="navigate('account')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
       حسابي
     </button>
-    <button class="nav-btn" onclick="openCoach()">
+    <button class="nav-btn nav-more-item" onclick="openCoach()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><path d="M18 2v4h4"/></svg>
       كوتش
     </button>
+    <button class="nav-btn nav-more-btn" onclick="openMoreMenu()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
+      المزيد
+    </button>
   </nav>
+
+  <!-- More sheet (native app only) -->
+  <div id="more-sheet-overlay" onclick="if(event.target===this) closeMoreMenu()">
+    <div id="more-sheet">
+      <button class="more-sheet-item" onclick="closeMoreMenu();navigate('library')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        مكتبة التمارين
+      </button>
+      <button class="more-sheet-item" onclick="closeMoreMenu();navigate('log')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        سجل التمارين
+      </button>
+      <button class="more-sheet-item" onclick="closeMoreMenu();navigate('gyms')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        إدارة الجيمات
+      </button>
+      <button class="more-sheet-item" onclick="closeMoreMenu();navigate('account')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        حسابي
+      </button>
+      <button class="more-sheet-item" onclick="closeMoreMenu();openCoach()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 8v4l3 3"/><path d="M18 2v4h4"/></svg>
+        كوتش
+      </button>
+    </div>
+  </div>
 
 </div><!-- end #app -->
 
@@ -3703,6 +3780,13 @@ function checkFirstTimeSetup() {
 // ============================================================
 // NAVIGATION
 // ============================================================
+function openMoreMenu() {
+  document.getElementById('more-sheet-overlay').classList.add('open');
+}
+function closeMoreMenu() {
+  document.getElementById('more-sheet-overlay').classList.remove('open');
+}
+
 function navigate(page) {
   if (gyms.length === 0 && page !== 'gyms') {
     document.getElementById('first-time-screen').classList.add('open');
