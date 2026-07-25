@@ -40,7 +40,10 @@ jobs:
         run: |
           cp ../app.html www/index.html
           cp ../manifest.json www/manifest.json || true
-          cp ../logo.png ../icon-192.png ../icon-512.png www/ || true
+          cp ../*.png www/ 2>/dev/null || true
+          cp ../*.jpg www/ 2>/dev/null || true
+          cp ../*.jpeg www/ 2>/dev/null || true
+          cp ../*.svg www/ 2>/dev/null || true
           rm -rf www/gifs && cp -r ../gifs www/gifs || true
 
       - name: Sync web assets into Android project
