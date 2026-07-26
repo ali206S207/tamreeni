@@ -6097,6 +6097,16 @@ async function stopNativeWorkoutBar() {
   try { await WT.stop(); } catch (e) {}
 }
 
+async function requestBatteryOptExemption() {
+  if (!window.isNativeApp) return;
+  const WT = _getWorkoutTimerPlugin();
+  if (!WT) { showToast('❌ الميزة دي متاحة بس جوه تطبيق الأندرويد'); return; }
+  try {
+    const res = await WT.requestIgnoreBatteryOptimizations();
+    if (res && res.alreadyIgnoring) showToast('✓ التطبيق مستبعد بالفعل من توفير البطارية');
+  } catch (e) { showToast('حصل خطأ، جرب من إعدادات البطارية يدوي'); }
+}
+
 function requestNotifPermission() {
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission().then(p => {
@@ -7078,6 +7088,17 @@ function renderAccount() {
           <span style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--text)">${val}</span>
         </div>`).join('')}
     </div>
+
+    ${window.isNativeApp ? `
+    <!-- App Settings (native only) -->
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold);letter-spacing:3px;margin-bottom:12px">// إعدادات_التطبيق</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;line-height:1.7">
+        بعض الأجهزة (شاومي، هواوي، أوبو...) بتقفل التطبيقات في الخلفية توفيرًا للبطارية، وده ممكن يوقف تايمر الراحة لو الشاشة مقفولة. استبعد تمرينتي من توفير البطارية عشان يفضل شغال دايمًا.
+      </div>
+      <button onclick="requestBatteryOptExemption()" style="width:100%;background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.3);color:var(--gold);border-radius:10px;padding:12px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px">🔋 استبعاد من توفير البطارية</button>
+    </div>
+    ` : ''}
 
     <!-- Danger Zone -->
     <div style="font-family:var(--font-mono);font-size:10px;color:var(--red);letter-spacing:3px;margin-bottom:12px">// منطقة_الخطر</div>
