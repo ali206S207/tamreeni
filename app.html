@@ -11,6 +11,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
@@ -879,9 +880,20 @@ html.is-native-app .nav-more-btn { display: flex; }
   transition: border-color .3s;
 }
 
-/* أثناء إعادة الترتيب: كل الكروت تتصغر وتوري الاسم بس عشان السحب يبقى أسهل */
+/* أثناء إعادة الترتيب: كل الكروت تتصغر بحركة ناعمة وتوري الاسم بس عشان السحب يبقى أسهل */
+#aw-exercises .active-exercise-card > *:not(.active-exercise-header) {
+  transition: max-height .3s cubic-bezier(.4,0,.2,1), opacity .2s ease, padding .3s ease, margin .3s ease;
+  max-height: 2000px;
+  opacity: 1;
+  overflow: hidden;
+}
 #aw-exercises.aw-reordering .active-exercise-card > *:not(.active-exercise-header) {
-  display: none;
+  max-height: 0 !important;
+  opacity: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
 }
 #aw-exercises.aw-reordering .active-exercise-card {
   border-color: rgba(41,121,255,0.35);
@@ -4920,8 +4932,27 @@ function buildSetPrevRow(ei, si) {
 
 // ─── DRAG & DROP (exercises reorder) ───
 let _awDragIdx = null;
+let _awScrollInterval = null;
+
+function _awEdgeScroll(clientY) {
+  const panel = document.getElementById('active-workout');
+  if (!panel) return;
+  const rect = panel.getBoundingClientRect();
+  const threshold = 90;
+  const topDist = clientY - rect.top;
+  const bottomDist = rect.bottom - clientY;
+  if (_awScrollInterval) { clearInterval(_awScrollInterval); _awScrollInterval = null; }
+  if (topDist >= 0 && topDist < threshold) {
+    const speed = Math.max(3, (threshold - topDist) / 4);
+    _awScrollInterval = setInterval(() => { panel.scrollTop -= speed; }, 16);
+  } else if (bottomDist >= 0 && bottomDist < threshold) {
+    const speed = Math.max(3, (threshold - bottomDist) / 4);
+    _awScrollInterval = setInterval(() => { panel.scrollTop += speed; }, 16);
+  }
+}
+
 function awDragStart(e, ei) { _awDragIdx = ei; e.dataTransfer.effectAllowed='move'; document.getElementById('aw-exercises')?.classList.add('aw-reordering'); setTimeout(()=>{ const el=document.getElementById(`awex-${ei}`); if(el) el.style.opacity='0.4'; },0); }
-function awDragOver(e, ei) { e.preventDefault(); e.dataTransfer.dropEffect='move'; }
+function awDragOver(e, ei) { e.preventDefault(); e.dataTransfer.dropEffect='move'; _awEdgeScroll(e.clientY); }
 function awDrop(e, ei) {
   e.preventDefault();
   if (_awDragIdx === null || _awDragIdx === ei) return;
@@ -4933,7 +4964,7 @@ function awDrop(e, ei) {
   saveState();
   renderActiveExercises();
 }
-function awDragEnd() { _awDragIdx = null; document.getElementById('aw-exercises')?.classList.remove('aw-reordering'); document.querySelectorAll('.active-exercise-card').forEach(el => el.style.opacity='1'); }
+function awDragEnd() { _awDragIdx = null; if (_awScrollInterval) { clearInterval(_awScrollInterval); _awScrollInterval = null; } document.getElementById('aw-exercises')?.classList.remove('aw-reordering'); document.querySelectorAll('.active-exercise-card').forEach(el => el.style.opacity='1'); }
 
 function renderSetRow(ei, si, s) {
   const exId = activeWorkout.exercises[ei].id;
@@ -5430,115 +5461,138 @@ function downloadLogPDF(idx) {
 // ============================================================
 // PDF GENERATION
 // ============================================================
-function generatePDF(log) {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  
-  // Background
-  doc.setFillColor(10, 10, 10);
-  doc.rect(0, 0, 210, 297, 'F');
-  
-  // Header bar
-  doc.setFillColor(232, 34, 42);
-  doc.rect(0, 0, 210, 2, 'F');
-  
-  // Title
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(28);
-  doc.setTextColor(232, 34, 42);
-  doc.text('WORKOUT LOG', 20, 22);
-  
-  doc.setFontSize(12);
-  doc.setTextColor(150, 150, 150);
-  doc.text('TRAINER PRO — BUILT IN SILENCE', 20, 30);
-  
-  // Info line
-  doc.setFillColor(26, 26, 26);
-  doc.roundedRect(15, 36, 180, 22, 4, 4, 'F');
-  
-  doc.setFontSize(11);
-  doc.setTextColor(240, 240, 240);
-  doc.setFont('helvetica', 'bold');
-  doc.text(log.type || 'WORKOUT', 22, 46);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(150, 150, 150);
-  doc.text(log.date, 22, 53);
-  
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(232, 34, 42);
-  doc.text(log.duration || '—', 90, 46);
-  doc.text((log.totalSets || '—') + ' sets', 90, 53);
-  doc.text(log.volume ? Math.round(log.volume) + ' kg vol' : '—', 140, 46);
-  
-  // Exercises
-  let y = 68;
-  if (log.exercises) {
-    log.exercises.forEach(ex => {
-      if (y > 265) {
-        doc.addPage();
-        doc.setFillColor(10, 10, 10);
-        doc.rect(0, 0, 210, 297, 'F');
-        y = 20;
-      }
-      
-      // Exercise header
-      doc.setFillColor(34, 34, 34);
-      doc.roundedRect(15, y, 180, 10, 2, 2, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.setTextColor(240, 240, 240);
-      doc.text(ex.name.toUpperCase(), 20, y + 7);
-      doc.setTextColor(232, 34, 42);
-      doc.text(ex.muscle || '', 160, y + 7);
-      y += 13;
-      
-      // Sets header
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 100, 100);
-      doc.text('SET', 22, y);
-      doc.text('WEIGHT (kg)', 45, y);
-      doc.text('REPS', 90, y);
-      doc.text('VOLUME', 120, y);
-      doc.text('STATUS', 160, y);
-      y += 4;
-      
-      doc.setDrawColor(40, 40, 40);
-      doc.line(20, y, 190, y);
-      y += 5;
-      
-      ex.sets.forEach((s, si) => {
-        const vol = (parseFloat(s.weight)||0) * (parseInt(s.reps)||0);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(9);
-        doc.setTextColor(s.done ? 240 : 100, s.done ? 240 : 100, s.done ? 240 : 100);
-        doc.text(String(si + 1), 22, y);
-        doc.text(s.weight ? String(s.weight) : '—', 45, y);
-        doc.text(s.reps ? String(s.reps) : '—', 90, y);
-        doc.text(vol ? Math.round(vol) + ' kg' : '—', 120, y);
-        
-        if (s.done) {
-          doc.setTextColor(32, 192, 96);
-          doc.text('✓ DONE', 160, y);
-        } else {
-          doc.setTextColor(100, 100, 100);
-          doc.text('SKIPPED', 160, y);
-        }
-        y += 7;
-      });
-      y += 4;
-    });
+async function generatePDF(log) {
+  showToast('⏳ جاري تجهيز ملف الـ PDF...');
+
+  const totalVolume = log.exercises ? log.exercises.reduce((sum, ex) =>
+    sum + ex.sets.reduce((s, st) => s + (st.done ? (parseFloat(st.weight)||0) * (parseInt(st.reps)||0) : 0), 0), 0) : (log.volume || 0);
+
+  const exercisesHtml = (log.exercises || []).map(ex => `
+    <div style="background:#111a2e;border:1px solid #24304a;border-radius:14px;margin-bottom:14px;overflow:hidden;page-break-inside:avoid">
+      <div style="display:flex;justify-content:space-between;align-items:center;background:#16213b;padding:12px 18px">
+        <div style="font-size:16px;font-weight:800;color:#eef2fb">${ex.name}</div>
+        <div style="font-size:12px;font-weight:700;color:#4d9bff">${ex.muscle || ''}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="color:#7a88a6;font-size:11px">
+            <th style="padding:8px 18px;text-align:right;font-weight:700">سيت</th>
+            <th style="padding:8px 10px;text-align:right;font-weight:700">الوزن</th>
+            <th style="padding:8px 10px;text-align:right;font-weight:700">التكرار</th>
+            <th style="padding:8px 10px;text-align:right;font-weight:700">الحجم</th>
+            <th style="padding:8px 18px;text-align:left;font-weight:700">الحالة</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${ex.sets.map((s, si) => {
+            const vol = (parseFloat(s.weight)||0) * (parseInt(s.reps)||0);
+            const color = s.done ? '#eef2fb' : '#5c6b8a';
+            return `
+            <tr style="border-top:1px solid #1e2942">
+              <td style="padding:9px 18px;color:${color};font-weight:700">${si + 1}</td>
+              <td style="padding:9px 10px;color:${color}">${s.weight ? s.weight + ' كجم' : '—'}</td>
+              <td style="padding:9px 10px;color:${color}">${s.reps || '—'}</td>
+              <td style="padding:9px 10px;color:${color}">${vol ? Math.round(vol) + ' كجم' : '—'}</td>
+              <td style="padding:9px 18px;text-align:left">
+                ${s.done
+                  ? '<span style="color:#22d07a;font-weight:800">✓ تم</span>'
+                  : '<span style="color:#5c6b8a">لم يُنفَّذ</span>'}
+              </td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `).join('');
+
+  const html = `
+    <div style="width:760px;padding:36px;background:#0b1220;font-family:'Cairo',sans-serif;direction:rtl" dir="rtl">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:26px">
+        <img src="logo.png" style="width:52px;height:52px;border-radius:14px" crossorigin="anonymous">
+        <div>
+          <div style="font-size:22px;font-weight:900;color:#eef2fb">تمريـ<span style="color:#4d9bff">نتي</span></div>
+          <div style="font-size:12px;color:#7a88a6;font-weight:700;letter-spacing:.5px">سجل التمرين</div>
+        </div>
+      </div>
+
+      <div style="background:#111a2e;border:1px solid #24304a;border-radius:14px;padding:18px 20px;margin-bottom:22px;display:flex;flex-wrap:wrap;gap:18px">
+        <div style="flex:1;min-width:130px">
+          <div style="font-size:11px;color:#7a88a6;font-weight:700;margin-bottom:4px">نوع التمرين</div>
+          <div style="font-size:15px;color:#eef2fb;font-weight:800">${log.type || '—'}</div>
+        </div>
+        <div style="flex:1;min-width:130px">
+          <div style="font-size:11px;color:#7a88a6;font-weight:700;margin-bottom:4px">التاريخ</div>
+          <div style="font-size:15px;color:#eef2fb;font-weight:800">${log.date || '—'}</div>
+        </div>
+        <div style="flex:1;min-width:130px">
+          <div style="font-size:11px;color:#7a88a6;font-weight:700;margin-bottom:4px">المدة</div>
+          <div style="font-size:15px;color:#4d9bff;font-weight:800">${log.duration || '—'}</div>
+        </div>
+        <div style="flex:1;min-width:130px">
+          <div style="font-size:11px;color:#7a88a6;font-weight:700;margin-bottom:4px">عدد السيتات</div>
+          <div style="font-size:15px;color:#4d9bff;font-weight:800">${log.totalSets || '—'}</div>
+        </div>
+        <div style="flex:1;min-width:130px">
+          <div style="font-size:11px;color:#7a88a6;font-weight:700;margin-bottom:4px">الحجم الكلي</div>
+          <div style="font-size:15px;color:#4d9bff;font-weight:800">${Math.round(totalVolume)} كجم</div>
+        </div>
+      </div>
+
+      ${exercisesHtml}
+
+      <div style="text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid #24304a">
+        <div style="font-size:12px;color:#4d9bff;font-weight:800;letter-spacing:1px">تمرينتي</div>
+        <div style="font-size:10px;color:#5c6b8a;margin-top:2px">أول تطبيق عربي لتتبع التمارين</div>
+      </div>
+    </div>
+  `;
+
+  const wrapper = document.createElement('div');
+  wrapper.style.cssText = 'position:fixed;top:0;left:-9999px;z-index:-1';
+  wrapper.innerHTML = html;
+  document.body.appendChild(wrapper);
+
+  try {
+    const img = wrapper.querySelector('img');
+    if (img && !img.complete) {
+      await new Promise(res => { img.onload = res; img.onerror = res; setTimeout(res, 1500); });
+    }
+    // خلي الخط يتحمل كويس قبل التصوير
+    if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch(e){} }
+
+    const canvas = await html2canvas(wrapper.firstElementChild, { scale: 2, backgroundColor: '#0b1220', useCORS: true });
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidthMM = 210, pageHeightMM = 297;
+    const pxPerMM = canvas.width / pageWidthMM;
+    const pageHeightPx = Math.floor(pageHeightMM * pxPerMM);
+
+    let renderedY = 0;
+    let firstPage = true;
+    while (renderedY < canvas.height) {
+      const sliceH = Math.min(pageHeightPx, canvas.height - renderedY);
+      const pageCanvas = document.createElement('canvas');
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceH;
+      const ctx = pageCanvas.getContext('2d');
+      ctx.fillStyle = '#0b1220';
+      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+      ctx.drawImage(canvas, 0, renderedY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+      const imgData = pageCanvas.toDataURL('image/jpeg', 0.92);
+      if (!firstPage) doc.addPage();
+      doc.addImage(imgData, 'JPEG', 0, 0, pageWidthMM, sliceH / pxPerMM);
+      renderedY += sliceH;
+      firstPage = false;
+    }
+
+    doc.save(`تمرينتي-${log.date}-${(log.type||'تمرين')}.pdf`);
+  } catch (e) {
+    console.error('PDF generation failed', e);
+    showToast('❌ حصلت مشكلة في إنشاء الـ PDF');
+  } finally {
+    document.body.removeChild(wrapper);
   }
-  
-  // Footer
-  doc.setFillColor(232, 34, 42);
-  doc.rect(0, 295, 210, 2, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(100, 100, 100);
-  doc.text('DISCIPLINE • CONSISTENCY • PROGRESS', 105, 292, { align: 'center' });
-  
-  doc.save(`workout-${log.date}-${(log.type||'').replace(/\s/g,'_')}.pdf`);
 }
 
 // ============================================================
