@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.os.PowerManager
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
@@ -33,10 +34,16 @@ class WorkoutForegroundService : Service() {
     private var workoutStart = 0L
     private var restEnd = 0L
     private var restRang = false
+    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onCreate() {
         super.onCreate()
         createChannel()
+        try {
+            val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
+            wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "tamreeni:workoutTimer")
+            wakeLock?.setReferenceCounted(false)
+        } catch (e: Exception) { /* ignore */ }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -45,11 +52,13 @@ class WorkoutForegroundService : Service() {
                 mode = "workout"
                 workoutStart = System.currentTimeMillis()
                 startForeground(NOTIF_ID, buildNotification("⏱ تمرينتي شغالة", "مدة التمرين: 0:00", false))
+                acquireWakeLock()
                 startTicking()
             }
             ACTION_RESUME_WORKOUT -> {
                 mode = "workout"
                 if (workoutStart == 0L) workoutStart = System.currentTimeMillis()
+                acquireWakeLock()
                 startTicking()
             }
             ACTION_START_REST -> {
@@ -57,10 +66,12 @@ class WorkoutForegroundService : Service() {
                 mode = "rest"
                 restEnd = System.currentTimeMillis() + seconds * 1000L
                 restRang = false
+                acquireWakeLock()
                 startTicking()
             }
             ACTION_STOP -> {
                 stopTicking()
+                releaseWakeLock()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
             }
@@ -68,11 +79,27 @@ class WorkoutForegroundService : Service() {
         return START_STICKY
     }
 
+    private fun acquireWakeLock() {
+        try {
+            if (wakeLock?.isHeld == false) wakeLock?.acquire(6 * 60 * 60 * 1000L) // حد أقصى 6 ساعات أمان
+        } catch (e: Exception) { /* ignore */ }
+    }
+
+    private fun releaseWakeLock() {
+        try {
+            if (wakeLock?.isHeld == true) wakeLock?.release()
+        } catch (e: Exception) { /* ignore */ }
+    }
+
     private fun startTicking() {
         stopTicking()
         val r = object : Runnable {
             override fun run() {
-                tick()
+                try {
+                    tick()
+                } catch (e: Exception) {
+                    // منمنعش الحلقة توقف حتى لو حصل استثناء غير متوقع
+                }
                 handler.postDelayed(this, 1000)
             }
         }
@@ -161,6 +188,7 @@ class WorkoutForegroundService : Service() {
 
     override fun onDestroy() {
         stopTicking()
+        releaseWakeLock()
         super.onDestroy()
     }
 }
