@@ -517,11 +517,17 @@ html.is-native-app .nav-more-btn { display: flex; }
   margin-bottom: 16px;
   gap: 3px;
   border: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
 }
+.ppl-tabs::-webkit-scrollbar { display: none; }
 
 .ppl-tab {
-  flex: 1;
-  padding: 11px 4px;
+  flex: 1 1 auto;
+  min-width: 74px;
+  white-space: nowrap;
+  padding: 11px 10px;
   background: none;
   border: none;
   border-radius: 11px;
@@ -871,6 +877,17 @@ html.is-native-app .nav-more-btn { display: flex; }
   margin: 0 12px 12px;
   overflow: hidden;
   transition: border-color .3s;
+}
+
+/* أثناء إعادة الترتيب: كل الكروت تتصغر وتوري الاسم بس عشان السحب يبقى أسهل */
+#aw-exercises.aw-reordering .active-exercise-card > *:not(.active-exercise-header) {
+  display: none;
+}
+#aw-exercises.aw-reordering .active-exercise-card {
+  border-color: rgba(41,121,255,0.35);
+}
+#aw-exercises.aw-reordering .active-exercise-header {
+  cursor: grabbing;
 }
 
 .active-exercise-card:has(.set-done-btn.done:last-of-type) {
@@ -4903,7 +4920,7 @@ function buildSetPrevRow(ei, si) {
 
 // ─── DRAG & DROP (exercises reorder) ───
 let _awDragIdx = null;
-function awDragStart(e, ei) { _awDragIdx = ei; e.dataTransfer.effectAllowed='move'; setTimeout(()=>{ const el=document.getElementById(`awex-${ei}`); if(el) el.style.opacity='0.4'; },0); }
+function awDragStart(e, ei) { _awDragIdx = ei; e.dataTransfer.effectAllowed='move'; document.getElementById('aw-exercises')?.classList.add('aw-reordering'); setTimeout(()=>{ const el=document.getElementById(`awex-${ei}`); if(el) el.style.opacity='0.4'; },0); }
 function awDragOver(e, ei) { e.preventDefault(); e.dataTransfer.dropEffect='move'; }
 function awDrop(e, ei) {
   e.preventDefault();
@@ -4916,7 +4933,7 @@ function awDrop(e, ei) {
   saveState();
   renderActiveExercises();
 }
-function awDragEnd() { _awDragIdx = null; document.querySelectorAll('.active-exercise-card').forEach(el => el.style.opacity='1'); }
+function awDragEnd() { _awDragIdx = null; document.getElementById('aw-exercises')?.classList.remove('aw-reordering'); document.querySelectorAll('.active-exercise-card').forEach(el => el.style.opacity='1'); }
 
 function renderSetRow(ei, si, s) {
   const exId = activeWorkout.exercises[ei].id;
@@ -4943,6 +4960,9 @@ function renderSetRow(ei, si, s) {
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
     </button>
   </div>
+  ${si === 0 && activeWorkout.exercises[ei].sets.length > 1 && s.weight && s.reps ? `
+  <button onclick="applyToAllSets(${ei})" style="width:100%;background:rgba(41,121,255,0.06);border:1px dashed rgba(41,121,255,0.3);color:var(--gold);border-radius:8px;padding:7px;margin:2px 0 6px;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer">⤵ طبّق ${s.weight}kg × ${s.reps} على كل السيتات</button>
+  ` : ''}
   <div id="bst-${ei}-${si}" class="between-set-timer ${s.done?'active':''}">
     <div class="between-set-timer-bar-wrap">
       <div class="between-set-timer-fill" id="bst-fill-${ei}-${si}" style="width:${s.done?'100%':'0%'}"></div>
@@ -4955,6 +4975,21 @@ function updateSet(ei, si, field, val) {
   activeWorkout.exercises[ei].sets[si][field] = parseFloat(val) || val;
   state.activeWorkout = activeWorkout;
   saveState();
+}
+
+function applyToAllSets(ei) {
+  const sets = activeWorkout.exercises[ei].sets;
+  const w = sets[0].weight, r = sets[0].reps;
+  for (let i = 1; i < sets.length; i++) {
+    if (sets[i].done) continue; // متسحبش على سيتات خلصت أصلاً
+    sets[i].weight = w;
+    sets[i].reps = r;
+  }
+  state.activeWorkout = activeWorkout;
+  saveState();
+  const container = document.getElementById(`sets-${ei}`);
+  if (container) container.innerHTML = sets.map((s, si) => renderSetRow(ei, si, s)).join('');
+  showToast('✓ اتطبّق على كل السيتات');
 }
 
 function setExRestTime(ei, val) {
@@ -4998,12 +5033,22 @@ function cycleSetType(ei, si) {
 }
 
 function deleteSet(ei, si) {
+  const removed = activeWorkout.exercises[ei].sets[si];
   activeWorkout.exercises[ei].sets.splice(si, 1);
   state.activeWorkout = activeWorkout;
   saveState();
   updateWorkoutStats();
   const container = document.getElementById(`sets-${ei}`);
   if (container) container.innerHTML = activeWorkout.exercises[ei].sets.map((s, i) => renderSetRow(ei, i, s)).join('');
+
+  showUndoToast('🗑 اتحذف السيت', () => {
+    activeWorkout.exercises[ei].sets.splice(si, 0, removed);
+    state.activeWorkout = activeWorkout;
+    saveState();
+    updateWorkoutStats();
+    const c = document.getElementById(`sets-${ei}`);
+    if (c) c.innerHTML = activeWorkout.exercises[ei].sets.map((s, i) => renderSetRow(ei, i, s)).join('');
+  });
 }
 
 function toggleSetDone(ei, si) {
@@ -5066,8 +5111,10 @@ function toggleSetDone(ei, si) {
 }
 
 function addSet(ei) {
-  const s = { weight: '', reps: '', done: false };
-  activeWorkout.exercises[ei].sets.push(s);
+  const sets = activeWorkout.exercises[ei].sets;
+  const prev = sets[sets.length - 1];
+  const s = { weight: (prev && prev.weight) || '', reps: (prev && prev.reps) || '', done: false };
+  sets.push(s);
   state.activeWorkout = activeWorkout;
   saveState();
   
@@ -6302,6 +6349,21 @@ function showToast(msg) {
   t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#242426;border:1px solid var(--gold);color:#f5f5f7;padding:10px 20px;border-radius:10px;font-family:var(--font-mono);font-size:13px;font-weight:600;z-index:9998;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.5);animation:fadeIn .2s ease';
   document.body.appendChild(t);
   setTimeout(() => t.remove(), 2500);
+}
+
+function showUndoToast(msg, undoFn) {
+  const t = document.createElement('div');
+  t.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;background:#242426;border:1px solid var(--gold);color:#f5f5f7;padding:10px 12px 10px 20px;border-radius:10px;font-family:var(--font-mono);font-size:13px;font-weight:600;z-index:9998;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,0.5);animation:fadeIn .2s ease';
+  const label = document.createElement('span');
+  label.textContent = msg;
+  const btn = document.createElement('button');
+  btn.textContent = 'تراجع ↩';
+  btn.style.cssText = 'background:rgba(41,121,255,0.15);border:1px solid var(--gold);color:var(--gold);border-radius:8px;padding:6px 12px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer';
+  btn.onclick = () => { undoFn(); t.remove(); };
+  t.appendChild(label);
+  t.appendChild(btn);
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 5000);
 }
 
 // PWA Install
