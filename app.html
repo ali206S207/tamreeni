@@ -1883,7 +1883,7 @@ html.is-native-app .nav-more-btn { display: flex; }
   inset: 0;
   background: rgba(0,0,0,0);
   z-index: 9998;
-  transition: background .16s ease;
+  transition: background .15s ease;
 }
 #numpad-backdrop.open { display: block; background: rgba(0,0,0,0.5); }
 
@@ -1897,7 +1897,8 @@ html.is-native-app .nav-more-btn { display: flex; }
   padding: 10px 12px 14px;
   box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
   transform: translateY(100%);
-  transition: transform .18s ease-out;
+  transition: transform .15s ease-out;
+  will-change: transform;
 }
 #custom-numpad.open { display: block; }
 #custom-numpad.show { transform: translateY(0); }
@@ -1991,28 +1992,16 @@ html.is-native-app .nav-more-btn { display: flex; }
   font-weight: 500;
   padding: 11px 0;
   cursor: pointer;
-  transition: background 0.12s, transform 0.08s;
+  transition: transform 0.08s ease-out;
   text-align: center;
   width: 100%;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  position: relative;
-  overflow: hidden;
 }
 .numpad-btn:active {
   background: #3a3540;
   transform: scale(0.94);
 }
-/* ripple on tap */
-.numpad-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle, rgba(41,121,255,0.18) 0%, transparent 70%);
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-.numpad-btn:active::after { opacity: 1; }
 
 .numpad-btn.btn-red {
   background: #2b2930;
@@ -2538,7 +2527,7 @@ window.isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlat
 if (window.isNativeApp) document.documentElement.classList.add('is-native-app');
 
 // رقم نسخة النسخة المدمجة جوه التطبيق (بتتحدث يدوي كل ما نبني APK جديد فيه تغييرات مهمة)
-window.APP_VERSION = '1.0.0';
+window.APP_VERSION = '1.1.0';
 
 // فحص لو النسخة دي بقت قديمة ولازم تتحدث — بيتفحص بس لو في نت، ولو مفيش نت بيتجاهل تمامًا عشان مستخدمين بدون نت يقدروا يستخدموا التطبيق عادي
 (function checkAppVersionGate() {
@@ -5715,18 +5704,14 @@ function openNumpad(inputEl, field, ei, si) {
   const np = document.getElementById('custom-numpad');
   np.classList.add('open');
   requestAnimationFrame(() => np.classList.add('show'));
-  // prevent page scroll when numpad open
-  document.body.style.paddingBottom = '320px';
-  // scroll input into view
-  setTimeout(() => inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 100);
+  setTimeout(() => inputEl.scrollIntoView({ behavior: 'smooth', block: 'center' }), 80);
 }
 
 function closeNumpad() {
   const np = document.getElementById('custom-numpad');
   np.classList.remove('show');
   document.getElementById('numpad-backdrop').classList.remove('open');
-  setTimeout(() => np.classList.remove('open'), 180);
-  document.body.style.paddingBottom = '';
+  setTimeout(() => np.classList.remove('open'), 160);
   if (_numpadTarget) _numpadTarget.blur();
   _numpadTarget = null;
 }
