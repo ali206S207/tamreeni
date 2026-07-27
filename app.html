@@ -1877,6 +1877,16 @@ html.is-native-app .nav-more-btn { display: flex; }
 
 
 /* ── Material 3 Numpad ── */
+#numpad-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0);
+  z-index: 9998;
+  transition: background .25s ease;
+}
+#numpad-backdrop.open { display: block; background: rgba(0,0,0,0.55); }
+
 #custom-numpad {
   display: none;
   position: fixed;
@@ -1886,8 +1896,11 @@ html.is-native-app .nav-more-btn { display: flex; }
   z-index: 9999;
   padding: 12px 16px 24px;
   box-shadow: 0 -8px 32px rgba(0,0,0,0.5);
+  transform: translateY(100%);
+  transition: transform .28s cubic-bezier(.16,1,.3,1);
 }
 #custom-numpad.open { display: block; }
+#custom-numpad.show { transform: translateY(0); }
 
 /* drag handle */
 #custom-numpad::before {
@@ -1957,6 +1970,10 @@ html.is-native-app .nav-more-btn { display: flex; }
   transition: background 0.15s;
 }
 .numpad-step-btn:active { background: #3a3540; transform: scale(0.96); }
+.numpad-step-btn.step-minus { color: #ff6b6b; }
+.numpad-step-btn.step-minus:active { background: #3a1f1f; }
+.numpad-step-btn.step-plus { color: #22d07a; }
+.numpad-step-btn.step-plus:active { background: #16321f; }
 
 .numpad-grid {
   display: grid;
@@ -2018,6 +2035,12 @@ html.is-native-app .nav-more-btn { display: flex; }
   box-shadow: 0 1px 4px rgba(41,121,255,0.3);
   transform: scale(0.97);
 }
+@keyframes numpadConfirmPulse {
+  0% { transform: scale(1); }
+  40% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.numpad-btn.btn-confirm.pulse { animation: numpadConfirmPulse .25s ease; }
 
 
 #loading-screen {
@@ -3332,6 +3355,7 @@ var _swReg = null;
 </div>
 
 <!-- CUSTOM NUMPAD -->
+<div id="numpad-backdrop" onclick="closeNumpad()"></div>
 <div id="custom-numpad">
   <div class="numpad-header">
     <div class="numpad-field-label" id="numpad-label">وزن</div>
@@ -3339,12 +3363,12 @@ var _swReg = null;
     <button class="numpad-close" onclick="closeNumpad()">✕ إغلاق</button>
   </div>
   <div class="numpad-step-row" id="numpad-step-row">
-    <button class="numpad-step-btn" onclick="numpadStep(-5)">−5</button>
-    <button class="numpad-step-btn" onclick="numpadStep(-2.5)">−2.5</button>
-    <button class="numpad-step-btn" onclick="numpadStep(-1)">−1</button>
-    <button class="numpad-step-btn" onclick="numpadStep(1)">+1</button>
-    <button class="numpad-step-btn" onclick="numpadStep(2.5)">+2.5</button>
-    <button class="numpad-step-btn" onclick="numpadStep(5)">+5</button>
+    <button class="numpad-step-btn step-minus" onclick="numpadStep(-5)">−5</button>
+    <button class="numpad-step-btn step-minus" onclick="numpadStep(-2.5)">−2.5</button>
+    <button class="numpad-step-btn step-minus" onclick="numpadStep(-1)">−1</button>
+    <button class="numpad-step-btn step-plus" onclick="numpadStep(1)">+1</button>
+    <button class="numpad-step-btn step-plus" onclick="numpadStep(2.5)">+2.5</button>
+    <button class="numpad-step-btn step-plus" onclick="numpadStep(5)">+5</button>
   </div>
   <div class="numpad-grid">
     <button class="numpad-btn" onclick="numpadKey('1')">1</button>
@@ -5462,6 +5486,14 @@ function downloadLogPDF(idx) {
 // PDF GENERATION
 // ============================================================
 async function generatePDF(log) {
+  if (!navigator.onLine) {
+    showToast('📶 محتاج نت عشان تحمّل ملف الـ PDF أول مرة');
+    return;
+  }
+  if (typeof html2canvas === 'undefined') {
+    showToast('📶 لسه بيحمّل مكتبة الـ PDF — تأكد إن النت شغال وجرب تاني');
+    return;
+  }
   showToast('⏳ جاري تجهيز ملف الـ PDF...');
 
   const totalVolume = log.exercises ? log.exercises.reduce((sum, ex) =>
@@ -5679,8 +5711,10 @@ function openNumpad(inputEl, field, ei, si) {
   document.getElementById('numpad-step-row').style.display = isWeight ? 'flex' : 'none';
   document.getElementById('numpad-display').textContent = _numpadVal || '—';
 
-  // Hide step buttons for reps (not needed)
-  document.getElementById('custom-numpad').classList.add('open');
+  document.getElementById('numpad-backdrop').classList.add('open');
+  const np = document.getElementById('custom-numpad');
+  np.classList.add('open');
+  requestAnimationFrame(() => requestAnimationFrame(() => np.classList.add('show')));
   // prevent page scroll when numpad open
   document.body.style.paddingBottom = '320px';
   // scroll input into view
@@ -5688,13 +5722,21 @@ function openNumpad(inputEl, field, ei, si) {
 }
 
 function closeNumpad() {
-  document.getElementById('custom-numpad').classList.remove('open');
+  const np = document.getElementById('custom-numpad');
+  np.classList.remove('show');
+  document.getElementById('numpad-backdrop').classList.remove('open');
+  setTimeout(() => np.classList.remove('open'), 280);
   document.body.style.paddingBottom = '';
   if (_numpadTarget) _numpadTarget.blur();
   _numpadTarget = null;
 }
 
+function _numpadHaptic() { if (navigator.vibrate) navigator.vibrate(8); }
+
 function confirmNumpad() {
+  _numpadHaptic();
+  const btn = document.querySelector('.numpad-btn.btn-confirm');
+  if (btn) { btn.classList.add('pulse'); setTimeout(() => btn.classList.remove('pulse'), 250); }
   if (_numpadTarget && _numpadEi !== null) {
     const val = parseFloat(_numpadVal) || 0;
     _numpadTarget.value = val || '';
@@ -5704,6 +5746,7 @@ function confirmNumpad() {
 }
 
 function numpadKey(k) {
+  _numpadHaptic();
   if (k === '.' && _numpadVal.includes('.')) return;
   if (_numpadVal === '0' && k !== '.') _numpadVal = k;
   else _numpadVal += k;
@@ -5711,16 +5754,19 @@ function numpadKey(k) {
 }
 
 function numpadBackspace() {
+  _numpadHaptic();
   _numpadVal = _numpadVal.slice(0, -1);
   document.getElementById('numpad-display').textContent = _numpadVal || '—';
 }
 
 function numpadClear() {
+  _numpadHaptic();
   _numpadVal = '';
   document.getElementById('numpad-display').textContent = '—';
 }
 
 function numpadStep(delta) {
+  _numpadHaptic();
   const cur = parseFloat(_numpadVal) || 0;
   const next = Math.max(0, cur + delta);
   _numpadVal = (Number.isInteger(next) ? next : next.toFixed(1)).toString();
