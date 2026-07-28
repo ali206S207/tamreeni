@@ -2553,7 +2553,7 @@ const _savedTheme = localStorage.getItem('tamreeni_theme');
 if (_savedTheme && _savedTheme !== 'blue') document.documentElement.setAttribute('data-theme', _savedTheme);
 
 // رقم نسخة النسخة المدمجة جوه التطبيق (بتتحدث يدوي كل ما نبني APK جديد فيه تغييرات مهمة)
-window.APP_VERSION = '1.2.0';
+window.APP_VERSION = '1.3.0';
 
 // فحص لو النسخة دي بقت قديمة ولازم تتحدث — بيتفحص بس لو في نت، ولو مفيش نت بيتجاهل تمامًا عشان مستخدمين بدون نت يقدروا يستخدموا التطبيق عادي
 (function checkAppVersionGate() {
@@ -7446,9 +7446,52 @@ async function loadAdminAnalytics(pass) {
       <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px">
         ${versionRows || '<div style="padding:14px;color:var(--text-muted);font-size:13px">لا توجد بيانات</div>'}
       </div>
+
+      <div class="section-title">كل مستخدم</div>
+      <div id="admin-user-list">
+        <div style="text-align:center;padding:20px;color:var(--text-muted);font-family:var(--font-mono);font-size:12px">⏳ جاري التحميل...</div>
+      </div>
     `;
+    loadAdminUserList(pass);
   } catch (e) {
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--red);font-family:var(--font-mono)">❌ حصلت مشكلة في تحميل البيانات</div>';
+  }
+}
+
+async function loadAdminUserList(pass) {
+  const el = document.getElementById('admin-user-list');
+  try {
+    const res = await fetch('https://hukkzltmouigzsnqruxp.supabase.co/functions/v1/get-user-list', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: pass })
+    });
+    const d = await res.json();
+    const users = d.users || [];
+    if (!users.length) {
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">لا يوجد مستخدمين لسه</div>';
+      return;
+    }
+    const daysAgo = (dateStr) => Math.max(0, Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000));
+    el.innerHTML = users.map(u => `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <div style="font-family:var(--font-mono);font-weight:700;font-size:13px;color:${u.is_pro ? 'var(--gold)' : 'var(--text)'}">
+            ${u.is_pro ? '⭐ ' + (u.pro_code || 'كود غير معروف') : '🆓 مستخدم مجاني #' + u.device_id.slice(-6)}
+          </div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-muted)">${u.platform === 'android' ? '📱' : '🌐'} v${u.app_version || '?'}</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:var(--text-dim);font-family:var(--font-mono)">
+          <span>📋 ${u.program_name || 'غير محدد'}</span>
+          <span>🏋️ ${u.workouts_logged || 0} تمرين</span>
+          <span>🔁 ${u.ping_count || 1} فتحة</span>
+          <span>📅 عضو من ${daysAgo(u.first_seen)} يوم</span>
+          <span>🕓 آخر نشاط ${daysAgo(u.last_seen) === 0 ? 'النهاردة' : 'من ' + daysAgo(u.last_seen) + ' يوم'}</span>
+        </div>
+      </div>
+    `).join('');
+  } catch (e) {
+    el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--red);font-size:13px">❌ حصلت مشكلة</div>';
   }
 }
 
@@ -7468,6 +7511,15 @@ function _getDeviceId() {
   return id;
 }
 
+function _getActiveProgramNameForPing() {
+  try {
+    const activeProg = (state.programs || []).find(p => p.active);
+    if (activeProg && activeProg.name) return activeProg.name;
+    const builtIn = TRAINING_PROGRAMS.find(p => p.id === activeProgramId);
+    return builtIn ? builtIn.nameShort : 'PPL';
+  } catch (e) { return null; }
+}
+
 function sendUsagePing() {
   if (!navigator.onLine) return;
   try {
@@ -7481,6 +7533,8 @@ function sendUsagePing() {
         platform: window.isNativeApp ? 'android' : 'web',
         is_pro: !!isPro,
         workouts_logged: totalWorkouts,
+        pro_code: isPro ? currentCode : null,
+        program_name: _getActiveProgramNameForPing(),
       })
     }).catch(() => {});
   } catch (e) {}
