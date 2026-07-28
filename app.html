@@ -57,6 +57,28 @@
   --lh-loose:  1.75;
 }
 
+/* ── THEMES: تغيير لون الهوية (يفضل الوضع الغامق زي ما هو، بس اللون المميز بيتغير) ── */
+html[data-theme="green"] {
+  --gold: #00c853; --gold-dim: #087f3f; --gold2: #64dd17;
+  --border: rgba(0,200,83,0.15); --border2: rgba(0,200,83,0.08);
+  --glow: rgba(0,200,83,0.3); --glow2: rgba(100,221,23,0.2);
+}
+html[data-theme="purple"] {
+  --gold: #a855f7; --gold-dim: #6b21a8; --gold2: #d946ef;
+  --border: rgba(168,85,247,0.15); --border2: rgba(168,85,247,0.08);
+  --glow: rgba(168,85,247,0.3); --glow2: rgba(217,70,239,0.2);
+}
+html[data-theme="orange"] {
+  --gold: #ff6d00; --gold-dim: #a34700; --gold2: #ffab00;
+  --border: rgba(255,109,0,0.15); --border2: rgba(255,109,0,0.08);
+  --glow: rgba(255,109,0,0.3); --glow2: rgba(255,171,0,0.2);
+}
+html[data-theme="red"] {
+  --gold: #ff3b5c; --gold-dim: #a3223a; --gold2: #ff6b81;
+  --border: rgba(255,59,92,0.15); --border2: rgba(255,59,92,0.08);
+  --glow: rgba(255,59,92,0.3); --glow2: rgba(255,107,129,0.2);
+}
+
 /* عنوان رئيسي — استخدام واحد ثابت لكل عناوين الصفحات/الأقسام الكبرى */
 .heading-display {
   font-family: var(--font-main);
@@ -2526,8 +2548,12 @@ html.is-native-app .nav-more-btn { display: flex; }
 window.isNativeApp = !!(window.Capacitor && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform());
 if (window.isNativeApp) document.documentElement.classList.add('is-native-app');
 
+// تطبيق الثيم المحفوظ فورًا عشان محصلش وميض للون الافتراضي
+const _savedTheme = localStorage.getItem('tamreeni_theme');
+if (_savedTheme && _savedTheme !== 'blue') document.documentElement.setAttribute('data-theme', _savedTheme);
+
 // رقم نسخة النسخة المدمجة جوه التطبيق (بتتحدث يدوي كل ما نبني APK جديد فيه تغييرات مهمة)
-window.APP_VERSION = '1.1.0';
+window.APP_VERSION = '1.2.0';
 
 // فحص لو النسخة دي بقت قديمة ولازم تتحدث — بيتفحص بس لو في نت، ولو مفيش نت بيتجاهل تمامًا عشان مستخدمين بدون نت يقدروا يستخدموا التطبيق عادي
 (function checkAppVersionGate() {
@@ -2825,6 +2851,25 @@ var _swReg = null;
       <div id="log-list"></div>
     </div>
 
+    <!-- EVOLUTION PAGE (progress photos) -->
+    <div id="page-evolution" class="page">
+      <div class="page-header">
+        <div class="page-title">شوف <span class="gold">تطورك</span></div>
+        <button class="btn btn-gold" style="padding:8px 14px;font-size:12px" onclick="triggerEvolutionCapture()">📸 صورة جديدة</button>
+      </div>
+      <div id="evolution-content"></div>
+      <input type="file" id="evolution-file-input" accept="image/*" capture="user" style="display:none" onchange="handleEvolutionPhoto(event)">
+    </div>
+
+    <!-- ADMIN PAGE (hidden — accessed via 7-tap on version number) -->
+    <div id="page-admin" class="page" style="display:none">
+      <div class="page-header">
+        <div class="page-title">📊 <span class="gold">إحصائيات</span></div>
+        <button class="btn btn-outline" style="font-size:11px;padding:6px 12px" onclick="closeAdminPage()">رجوع</button>
+      </div>
+      <div id="admin-content"></div>
+    </div>
+
     <!-- PROGRESS PAGE -->
     <div id="page-progress" class="page">
       <div class="page-header">
@@ -2904,6 +2949,10 @@ var _swReg = null;
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       سجل
     </button>
+    <button class="nav-btn nav-more-item" data-page="evolution" onclick="navigate('evolution')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      تطورك
+    </button>
     <button class="nav-btn nav-more-item" data-page="gyms" onclick="navigate('gyms')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       الجيم
@@ -2932,6 +2981,10 @@ var _swReg = null;
       <button class="more-sheet-item" onclick="closeMoreMenu();navigate('log')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
         سجل التمارين
+      </button>
+      <button class="more-sheet-item" onclick="closeMoreMenu();navigate('evolution')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+        شوف تطورك
       </button>
       <button class="more-sheet-item" onclick="closeMoreMenu();navigate('gyms')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -3858,6 +3911,7 @@ function migrateState(s) {
   if (!s.prs) s.prs = {};
   if (!s.restDays) s.restDays = [];
   if (!s.schedule) s.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+  if (!s.progressPhotos) s.progressPhotos = [];
   return s;
 }
 
@@ -3918,6 +3972,7 @@ function navigate(page) {
   if (page === 'workout') renderPPL();
   if (page === 'library') renderLibrary();
   if (page === 'log') renderLog();
+  if (page === 'evolution') renderEvolution();
   if (page === 'progress') renderProgress();
   if (page === 'gyms') renderGymsSettings();
 }
@@ -4176,14 +4231,18 @@ function renderPPL() {
             ondragstart="dragStart(event,'${currentPPL}',${di},${ei})"
             ondragover="dragOver(event)"
             ondrop="drop(event,'${currentPPL}',${di},${ei})">
-            <span class="exercise-item-name">${ex.nameAr || ex.name}</span>
-            <span class="exercise-item-meta">${ex.muscle}</span>
-            ${ex.gif ? `<button class="icon-btn" title="شوف حركة التمرين" onclick="openExGifDirect('${ex.gif}','${(ex.nameAr||ex.name).replace(/'/g,"\\'")}')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>` : ''}
-            <button class="icon-btn-danger" title="حذف التمرين" onclick="removeExercise('${currentPPL}',${di},'${ex.id}')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
+            <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;overflow:hidden">
+              <span class="exercise-item-name" style="flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px">${ex.nameAr || ex.name}</span>
+              <span class="exercise-item-meta" style="margin-right:0;white-space:nowrap">${ex.muscle}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+              ${ex.gif ? `<button class="icon-btn" title="شوف حركة التمرين" onclick="openExGifDirect('${ex.gif}','${(ex.nameAr||ex.name).replace(/'/g,"\\'")}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>` : ''}
+              <button class="icon-btn-danger" title="حذف التمرين" onclick="removeExercise('${currentPPL}',${di},'${ex.id}')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
           </div>`).join('')}
         <button class="btn btn-outline btn-full" style="margin-top:4px;font-size:11px" onclick="openAddToDay('${currentPPL}',${di})">+ إضافة تمرين من المكتبة</button>
       </div>
@@ -5432,6 +5491,141 @@ function closeRestTimer() {
 // ============================================================
 // LOG
 // ============================================================
+// ============================================================
+// EVOLUTION — صور تطور الجسم (قبل / بعد)
+// ============================================================
+
+function triggerEvolutionCapture() {
+  document.getElementById('evolution-file-input').click();
+}
+
+function _compressImageFile(file, maxDim = 900, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxDim) { height = height * (maxDim / width); width = maxDim; }
+        else if (height > maxDim) { width = width * (maxDim / height); height = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function handleEvolutionPhoto(event) {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  showToast('⏳ جاري حفظ الصورة...');
+  try {
+    const dataUrl = await _compressImageFile(file);
+    state.progressPhotos.push({ id: 'p' + Date.now(), date: dateStr(new Date()), photo: dataUrl });
+    saveState();
+    renderEvolution();
+    showToast('✓ اتحفظت الصورة');
+  } catch (e) {
+    showToast('❌ حصلت مشكلة في حفظ الصورة');
+  }
+}
+
+async function deleteEvolutionPhoto(id) {
+  const ok = await appConfirmDanger('تحذف الصورة دي؟');
+  if (!ok) return;
+  state.progressPhotos = state.progressPhotos.filter(p => p.id !== id);
+  saveState();
+  renderEvolution();
+}
+
+function renderEvolution() {
+  const el = document.getElementById('evolution-content');
+  const photos = (state.progressPhotos || []).slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (!photos.length) {
+    el.innerHTML = `<div class="empty-state">
+      <span class="empty-state-icon" style="display:inline-flex;width:32px;height:32px;color:var(--text-muted)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+      </span>
+      <div class="empty-state-title">لسه مفيش صور</div>
+      <div class="empty-state-text">خد أول صورة دلوقتي، وبعد شهرين هنفكرك تاخد واحدة تانية عشان تشوف الفرق بنفسك</div>
+    </div>`;
+    return;
+  }
+
+  let compareHtml = '';
+  if (photos.length >= 2) {
+    const first = photos[0], last = photos[photos.length - 1];
+    compareHtml = `
+      <div class="section-title">قبل / بعد</div>
+      <div class="card" style="padding:14px;margin-bottom:18px">
+        <div style="display:flex;gap:8px">
+          <div style="flex:1;text-align:center">
+            <img src="${first.photo}" style="width:100%;border-radius:12px;object-fit:cover;aspect-ratio:3/4">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-family:var(--font-mono)">${first.date}</div>
+          </div>
+          <div style="flex:1;text-align:center">
+            <img src="${last.photo}" style="width:100%;border-radius:12px;object-fit:cover;aspect-ratio:3/4">
+            <div style="font-size:11px;color:var(--gold);margin-top:6px;font-family:var(--font-mono);font-weight:700">${last.date}</div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const timelineHtml = photos.slice().reverse().map(p => `
+    <div style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px">
+      <img src="${p.photo}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0">
+      <div style="flex:1;font-family:var(--font-mono);font-size:13px;color:var(--text-dim)">${p.date}</div>
+      <button class="icon-btn-danger" onclick="deleteEvolutionPhoto('${p.id}')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  `).join('');
+
+  el.innerHTML = compareHtml + `<div class="section-title">كل الصور</div>` + timelineHtml;
+}
+
+function checkEvolutionReminder() {
+  const photos = state.progressPhotos || [];
+  if (!photos.length) return;
+  const last = photos.slice().sort((a, b) => new Date(a.date) - new Date(b.date)).pop();
+  const daysSince = Math.floor((Date.now() - new Date(last.date).getTime()) / 86400000);
+  const dismissedFor = localStorage.getItem('tamreeni_evo_reminder_dismissed_' + last.id);
+  if (daysSince >= 60 && !dismissedFor) {
+    setTimeout(() => {
+      showEvolutionReminderBanner(last.id);
+    }, 1500);
+  }
+}
+
+function showEvolutionReminderBanner(lastPhotoId) {
+  const b = document.createElement('div');
+  b.style.cssText = 'position:fixed;top:60px;left:12px;right:12px;z-index:9997;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:var(--font-main)';
+  b.innerHTML = `
+    <div style="font-size:26px">📸</div>
+    <div style="flex:1">
+      <div style="font-weight:800;font-size:14px">شهرين مرّوا — شوف تطورك!</div>
+      <div style="font-size:12px;opacity:0.9">خد صورة جديدة وقارن بأول صورة ليك</div>
+    </div>
+    <button onclick="this.closest('div').parentElement.remove()" style="background:rgba(0,0,0,0.2);border:none;color:#fff;border-radius:8px;padding:6px 10px;font-size:16px;cursor:pointer">✕</button>
+  `;
+  b.onclick = (e) => {
+    if (e.target.tagName === 'BUTTON') { localStorage.setItem('tamreeni_evo_reminder_dismissed_' + lastPhotoId, '1'); return; }
+    navigate('evolution');
+    b.remove();
+  };
+  document.body.appendChild(b);
+  setTimeout(() => { if (b.parentElement) b.remove(); }, 10000);
+}
+
 function renderLog() {
   const list = document.getElementById('log-list');
   if (!state.log.length) {
@@ -5807,6 +6001,8 @@ if (heroDate) {
 renderDash();
 try { restoreActiveWorkout(); } catch(e) { console.warn('restoreActiveWorkout:', e); }
 try { initProgramSystem(); } catch(e) { console.warn('initProgramSystem:', e); }
+try { checkEvolutionReminder(); } catch(e) { console.warn('checkEvolutionReminder:', e); }
+try { setTimeout(() => { try { sendUsagePing(); } catch(e) { console.warn('sendUsagePing:', e); } }, 2000); } catch(e) {}
 if (window._hideLoadingScreen) window._hideLoadingScreen();
 // Show first-time setup if no gyms
 setTimeout(() => checkFirstTimeSetup(), 400);
@@ -6227,6 +6423,14 @@ async function stopNativeWorkoutBar() {
   const WT = _getWorkoutTimerPlugin();
   if (!WT) return;
   try { await WT.stop(); } catch (e) {}
+}
+
+function setAppTheme(id) {
+  if (id === 'blue') document.documentElement.removeAttribute('data-theme');
+  else document.documentElement.setAttribute('data-theme', id);
+  localStorage.setItem('tamreeni_theme', id);
+  if (navigator.vibrate) navigator.vibrate(8);
+  renderAccount();
 }
 
 async function requestBatteryOptExemption() {
@@ -7156,6 +7360,132 @@ window.navigate = function(page) {
 // ============================================================
 // ACCOUNT PAGE
 // ============================================================
+let _versionTaps = 0;
+let _versionTapTimer = null;
+function _versionTapCount() {
+  _versionTaps++;
+  clearTimeout(_versionTapTimer);
+  _versionTapTimer = setTimeout(() => { _versionTaps = 0; }, 1500);
+  if (_versionTaps >= 7) {
+    _versionTaps = 0;
+    openAdminGate();
+  }
+}
+
+async function openAdminGate() {
+  const pass = await appPrompt('كلمة سر الإدارة:');
+  if (!pass) return;
+  navigate.__adminKey = pass;
+  document.getElementById('first-time-screen'); // no-op guard
+  document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+  const el = document.getElementById('page-admin');
+  el.style.display = 'block'; el.classList.add('active');
+  loadAdminAnalytics(pass);
+}
+
+async function loadAdminAnalytics(pass) {
+  const el = document.getElementById('admin-content');
+  el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-family:var(--font-mono)">⏳ جاري التحميل...</div>';
+  try {
+    const res = await fetch('https://hukkzltmouigzsnqruxp.supabase.co/functions/v1/get-analytics-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ key: pass })
+    });
+    if (res.status === 401) {
+      el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--red);font-family:var(--font-mono)">❌ كلمة سر غلط</div>';
+      return;
+    }
+    const d = await res.json();
+    const stat = (icon, val, label) => `
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px;text-align:center">
+        <div style="font-size:22px;margin-bottom:6px">${icon}</div>
+        <div style="font-family:var(--font-mono);font-size:26px;font-weight:700;color:var(--gold)">${val}</div>
+        <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted);margin-top:3px;letter-spacing:1px">${label}</div>
+      </div>`;
+    const platformRows = Object.entries(d.platformCounts || {}).map(([k,v]) => `
+      <div style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px;color:var(--text-dim)">${k === 'android' ? '📱 أندرويد' : k === 'web' ? '🌐 ويب' : k}</span>
+        <span style="font-family:var(--font-mono);font-weight:700;color:var(--text)">${v}</span>
+      </div>`).join('');
+    const versionRows = Object.entries(d.versionCounts || {}).map(([k,v]) => `
+      <div style="display:flex;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px;color:var(--text-dim)">نسخة ${k}</span>
+        <span style="font-family:var(--font-mono);font-weight:700;color:var(--text)">${v}</span>
+      </div>`).join('');
+
+    el.innerHTML = `
+      <div class="section-title">المستخدمين</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        ${stat('👥', d.total, 'إجمالي المستخدمين')}
+        ${stat('🟢', d.activeToday, 'نشط النهاردة')}
+        ${stat('📅', d.activeWeek, 'نشط الأسبوع')}
+        ${stat('📆', d.activeMonth, 'نشط الشهر')}
+        ${stat('✨', d.newToday, 'جديد النهاردة')}
+        ${stat('🆕', d.newWeek, 'جديد الأسبوع')}
+      </div>
+
+      <div class="section-title">Pro مقابل مجاني</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        ${stat('⭐', d.proCount, 'مستخدم Pro')}
+        ${stat('🆓', d.freeCount, 'مستخدم مجاني')}
+      </div>
+
+      <div class="section-title">التمارين</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        ${stat('🏋️', d.totalWorkouts, 'إجمالي التمارين المسجلة')}
+        ${stat('📊', d.avgWorkoutsPerUser, 'متوسط لكل مستخدم')}
+      </div>
+
+      <div class="section-title">المنصة</div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px">
+        ${platformRows || '<div style="padding:14px;color:var(--text-muted);font-size:13px">لا توجد بيانات</div>'}
+      </div>
+
+      <div class="section-title">النسخ</div>
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px">
+        ${versionRows || '<div style="padding:14px;color:var(--text-muted);font-size:13px">لا توجد بيانات</div>'}
+      </div>
+    `;
+  } catch (e) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--red);font-family:var(--font-mono)">❌ حصلت مشكلة في تحميل البيانات</div>';
+  }
+}
+
+function closeAdminPage() {
+  document.getElementById('page-admin').style.display = 'none';
+  document.getElementById('page-admin').classList.remove('active');
+  navigate('account');
+}
+
+// ── PING أنونيمي لإحصائيات الاستخدام (بدون بيانات شخصية) ──
+function _getDeviceId() {
+  let id = localStorage.getItem('tamreeni_device_id');
+  if (!id) {
+    id = 'd_' + Date.now() + '_' + Math.random().toString(36).slice(2, 12);
+    localStorage.setItem('tamreeni_device_id', id);
+  }
+  return id;
+}
+
+function sendUsagePing() {
+  if (!navigator.onLine) return;
+  try {
+    const totalWorkouts = (state && state.log) ? state.log.length : 0;
+    fetch('https://hukkzltmouigzsnqruxp.supabase.co/functions/v1/ping-usage', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_id: _getDeviceId(),
+        app_version: window.APP_VERSION,
+        platform: window.isNativeApp ? 'android' : 'web',
+        is_pro: !!isPro,
+        workouts_logged: totalWorkouts,
+      })
+    }).catch(() => {});
+  } catch (e) {}
+}
+
 function renderAccount() {
   const el = document.getElementById('account-content');
   if (!el) return;
@@ -7236,6 +7566,26 @@ function renderAccount() {
         </div>`).join('')}
     </div>
 
+    <!-- Theme picker (universal) -->
+    <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold);letter-spacing:3px;margin-bottom:12px">// الثيم</div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px">غيّر لون هوية التطبيق حسب مزاجك</div>
+      <div style="display:flex;gap:10px" id="theme-picker-row">
+        ${[
+          ['blue','#2979FF','أزرق'],
+          ['green','#00c853','أخضر'],
+          ['purple','#a855f7','بنفسجي'],
+          ['orange','#ff6d00','برتقالي'],
+          ['red','#ff3b5c','أحمر'],
+        ].map(([id,color,label]) => `
+          <button onclick="setAppTheme('${id}')" id="theme-swatch-${id}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:4px">
+            <span style="display:block;width:32px;height:32px;border-radius:50%;background:${color};border:2px solid ${(localStorage.getItem('tamreeni_theme')||'blue')===id?'#fff':'transparent'};box-shadow:0 0 0 2px ${color}"></span>
+            <span style="font-size:10px;color:var(--text-muted);font-weight:600">${label}</span>
+          </button>
+        `).join('')}
+      </div>
+    </div>
+
     ${window.isNativeApp ? `
     <!-- App Settings (native only) -->
     <div style="font-family:var(--font-mono);font-size:10px;color:var(--gold);letter-spacing:3px;margin-bottom:12px">// إعدادات_التطبيق</div>
@@ -7252,6 +7602,10 @@ function renderAccount() {
     <div style="background:rgba(248,81,73,0.05);border:1px solid rgba(248,81,73,0.15);border-radius:12px;padding:14px">
       <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;font-weight:300;line-height:1.6">حذف كل البيانات المحلية — ${isPro?'بياناتك على السيرفر هتفضل محفوظة':'هيتحذف كل حاجة نهائياً'}</div>
       <button onclick="clearAllLocalData()" style="width:100%;background:rgba(248,81,73,0.1);border:1px solid rgba(248,81,73,0.3);color:var(--red);border-radius:10px;padding:12px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px">🗑 مسح البيانات المحلية</button>
+    </div>
+
+    <div onclick="_versionTapCount()" style="text-align:center;padding:20px 0 8px;font-family:var(--font-mono);font-size:11px;color:var(--text-muted);user-select:none">
+      تمرينتي v${window.APP_VERSION}
     </div>`;
 }
 
