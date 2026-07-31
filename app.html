@@ -2553,7 +2553,7 @@ const _savedTheme = localStorage.getItem('tamreeni_theme');
 if (_savedTheme && _savedTheme !== 'blue') document.documentElement.setAttribute('data-theme', _savedTheme);
 
 // رقم نسخة النسخة المدمجة جوه التطبيق (بتتحدث يدوي كل ما نبني APK جديد فيه تغييرات مهمة)
-window.APP_VERSION = '1.4.0';
+window.APP_VERSION = '1.5.0';
 
 // فحص لو النسخة دي بقت قديمة ولازم تتحدث — بيتفحص بس لو في نت، ولو مفيش نت بيتجاهل تمامًا عشان مستخدمين بدون نت يقدروا يستخدموا التطبيق عادي
 (function checkAppVersionGate() {
@@ -7739,12 +7739,15 @@ let isPro = false;
     isPro = true;
     // تحقق من الكود في الخلفية
     verifyCode(saved).then(r => {
-      if (!r.ok) {
+      if (r.ok) {
+        loadUserDataFromCloud().then(() => { renderDash(); renderGymsSettings(); });
+      } else if (r.offline) {
+        // مانقدرش نتأكد من الكود دلوقتي (مفيش نت) — نفضل مسجلين محليًا ونحاول نتأكد تاني بعدين
+        console.warn('verifyCode: offline, keeping local session');
+      } else {
         currentCode = null; isPro = false;
         localStorage.removeItem('tamreeni_code');
         showCodeScreen();
-      } else {
-        loadUserDataFromCloud().then(() => { renderDash(); renderGymsSettings(); });
       }
     });
   } else {
@@ -7834,12 +7837,18 @@ async function verifyCode(code) {
       .select('*')
       .eq('code', code.trim().toUpperCase())
       .single();
-    if (error || !data) return { ok: false, msg: 'الكود غلط أو غير موجود' };
+    if (error) {
+      // PGRST116 = مفيش صف مطابق — الكود فعلاً مش موجود
+      if (error.code === 'PGRST116') return { ok: false, msg: 'الكود غلط أو غير موجود' };
+      // أي خطأ تاني (شبكة/سيرفر) — مانقدرش نتأكد، مش معناها إن الكود غلط
+      return { ok: false, offline: true, msg: 'خطأ في الاتصال' };
+    }
+    if (!data) return { ok: false, msg: 'الكود غلط أو غير موجود' };
     if (!data.is_active) return { ok: false, msg: 'الكود متوقف' };
     if (data.expires_at && new Date(data.expires_at) < new Date())
       return { ok: false, msg: 'الكود انتهت صلاحيته' };
     return { ok: true, code: data.code };
-  } catch(e) { return { ok: false, msg: 'خطأ في الاتصال' }; }
+  } catch(e) { return { ok: false, offline: true, msg: 'خطأ في الاتصال' }; }
 }
 
 // ── Cloud Sync ──
@@ -7879,7 +7888,7 @@ async function syncToCloud() {
   try {
     const allSchedules = {};
     gyms.forEach(g => { allSchedules[g.id] = loadGymState(g.id).schedule; });
-    await supa.from('tamreeni_users').upsert({
+    const { error } = await supa.from('tamreeni_users').upsert({
       code: currentCode,
       gyms,
       active_gym_id: activeGymId,
@@ -7890,9 +7899,25 @@ async function syncToCloud() {
       rest_days: state.restDays,
       programs: state.programs || [],
     }, { onConflict: 'code' });
+    if (error) throw error;
+    localStorage.removeItem('tamreeni_sync_pending');
     const dot = document.getElementById('sync-dot');
     if (dot) { dot.style.background = '#30d158'; setTimeout(() => dot.style.background = '', 2000); }
-  } catch(e) {}
+  } catch(e) {
+    // فشل المزامنة (غالبًا مفيش نت) — سجّل إن فيه تغييرات لسه معلقة عشان نحاول تاني أول ما النت يرجع
+    localStorage.setItem('tamreeni_sync_pending', '1');
+  }
+}
+
+// أول ما النت يرجع، حاول تاني لو فيه تغييرات كانت معلقة وقت ما كنا أوفلاين
+window.addEventListener('online', () => {
+  if (currentCode && localStorage.getItem('tamreeni_sync_pending')) {
+    syncToCloud();
+  }
+});
+// وكمان أول ما التطبيق يفتح، لو لقى تغييرات معلقة من قبل والنت شغال، يحاول يزامن فورًا
+if (navigator.onLine && localStorage.getItem('tamreeni_sync_pending')) {
+  setTimeout(() => { if (currentCode) syncToCloud(); }, 4000);
 }
 
 // ── Patch saveState to also sync ──
