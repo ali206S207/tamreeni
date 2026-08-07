@@ -44,7 +44,9 @@ jobs:
           cp ../*.jpg www/ 2>/dev/null || true
           cp ../*.jpeg www/ 2>/dev/null || true
           cp ../*.svg www/ 2>/dev/null || true
-          rm -rf www/gifs && cp -r ../gifs www/gifs || true
+          rm -rf www/gifs && mkdir -p www/gifs
+          # ما نضيفش جواه GIFs التمارين الإضافية بتاعة Pro (eXXX.gif حيث الرقم 200+) — دي بتتحمل عند الطلب لتقليل حجم التطبيق
+          find ../gifs -maxdepth 1 -type f -name '*.gif' ! -regex '.*/e[2-9][0-9][0-9]\.gif' -exec cp {} www/gifs/ \; || true
 
       - name: Sync web assets into Android project
         run: npx cap sync android

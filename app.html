@@ -5026,6 +5026,7 @@ function addExerciseToDay(ppl, di) {
   }
   closeModal('add-to-day-modal');
   pendingLibExercise = null;
+  renderPPL();
 }
 
 function closeModal(id) {
@@ -6544,20 +6545,49 @@ function numpadStep(delta) {
 }
 
 // ── AUTO REST DAY TRACKING ──
+const DAILY_CHECKIN_NOTIF_ID = 778830;
+
+async function scheduleDailyCheckIn() {
+  if (!window.isNativeApp) return;
+  const LN = _getLocalNotifPlugin();
+  if (!LN) return;
+  try {
+    if (!_nativeNotifPermAsked) {
+      _nativeNotifPermAsked = true;
+      const perm = await LN.checkPermissions();
+      if (perm.display !== 'granted') await LN.requestPermissions();
+    }
+    await LN.cancel({ notifications: [{ id: DAILY_CHECKIN_NOTIF_ID }] });
+    await LN.schedule({
+      notifications: [{
+        id: DAILY_CHECKIN_NOTIF_ID,
+        title: '📋 تسجيل يومي',
+        body: 'اتمرنت النهاردة؟ افتح تمرينتي وسجّل — لو نسيت، النهاردة هيتحسب راحة تلقائي',
+        schedule: { on: { hour: 19, minute: 0 }, repeats: true, allowWhileIdle: true },
+        smallIcon: 'ic_launcher',
+      }]
+    });
+  } catch (e) { console.warn('scheduleDailyCheckIn failed', e); }
+}
+
 function checkAndMarkRestDay() {
+  const lastChecked = localStorage.getItem('tamreeni_last_restcheck_' + activeGymId);
   const today = dateStr(new Date());
-  const yesterday = dateStr(new Date(Date.now() - 86400000));
-
-  // Check yesterday — if no workout logged and no rest day marked, mark as rest
-  const yestHasWorkout = state.log.some(l => l.date === yesterday && l.type !== 'REST');
-  const yestHasRest = state.restDays.includes(yesterday);
-  if (!yestHasWorkout && !yestHasRest && yesterday) {
-    state.restDays.push(yesterday);
-    saveState();
+  // ابدأ من أول يوم بعد آخر فحص (أو من امبارح لو أول مرة) لحد امبارح — عشان لو فتحت التطبيق بعد كذا يوم يتحسبوا كلهم راحة مش يوم واحد بس
+  let startFrom = lastChecked ? new Date(lastChecked) : new Date(Date.now() - 86400000);
+  const endAt = new Date(Date.now() - 86400000); // امبارح
+  let changed = false;
+  for (let d = new Date(startFrom); d <= endAt; d.setDate(d.getDate() + 1)) {
+    const ds = dateStr(d);
+    const hasWorkout = state.log.some(l => l.date === ds && l.type !== 'REST');
+    const hasRest = state.restDays.includes(ds);
+    if (!hasWorkout && !hasRest) {
+      state.restDays.push(ds);
+      changed = true;
+    }
   }
-
-  // Check if today has no activity yet — mark tentatively (will be overridden if workout completed)
-  // We don't mark today proactively — only past days get marked
+  if (changed) saveState();
+  localStorage.setItem('tamreeni_last_restcheck_' + activeGymId, today);
 }
 
 function markTodayAsWorkout(date) {
@@ -6593,6 +6623,7 @@ renderDash();
 try { restoreActiveWorkout(); } catch(e) { console.warn('restoreActiveWorkout:', e); }
 try { initProgramSystem(); } catch(e) { console.warn('initProgramSystem:', e); }
 try { checkEvolutionReminder(); } catch(e) { console.warn('checkEvolutionReminder:', e); }
+try { scheduleDailyCheckIn(); } catch(e) { console.warn('scheduleDailyCheckIn:', e); }
 try { setTimeout(() => { try { sendUsagePing(); } catch(e) { console.warn('sendUsagePing:', e); } }, 2000); } catch(e) {}
 if (window._hideLoadingScreen) window._hideLoadingScreen();
 // Show first-time setup if no gyms
@@ -7350,12 +7381,94 @@ function openExGif(ei) {
   if (!ex || !ex.gif) return;
   openExGifDirect(ex.gif, ex.name);
 }
-function openExGifDirect(gif, name) {
-  const src = /^https?:\/\//.test(gif) ? gif : `gifs/${gif}`;
+// ── تمارين Pro: الـ GIFs مش متحملة جوه التطبيق كل مرة، بتتحمل اختياريًا وتتخزن محليًا ──
+const GIF_REMOTE_BASE = 'https://ali206s207.github.io/gifs/';
+function _isOptionalGif(filename) { return /^e[2-9]\d\d\.gif$/.test(filename || ''); }
+
+function _getFilesystemPlugin() {
+  return (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem) || null;
+}
+
+async function _resolveGifSrc(gif) {
+  if (/^https?:\/\//.test(gif)) return gif;
+  if (!window.isNativeApp) return `gifs/${gif}`; // نسخة الويب زي ما هي دايمًا
+  if (!_isOptionalGif(gif)) return `gifs/${gif}`; // متبني جوه التطبيق أصلاً (مجاني)
+
+  const FS = _getFilesystemPlugin();
+  if (FS) {
+    try {
+      const res = await FS.readFile({ path: `gifs/${gif}`, directory: 'DATA' });
+      return `data:image/gif;base64,${res.data}`;
+    } catch (e) { /* مش متحمل محليًا لسه */ }
+  }
+  if (navigator.onLine) return GIF_REMOTE_BASE + gif; // شغّله مباشرة من النت لحد ما يحمله
+  return null; // مفيش نت ومفيش نسخة محلية
+}
+
+async function startGifPackDownload() {
+  const btn = document.getElementById('gif-pack-btn');
+  const prog = document.getElementById('gif-pack-progress');
+  const fill = document.getElementById('gif-pack-fill');
+  const label = document.getElementById('gif-pack-label');
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; }
+  if (prog) prog.style.display = 'block';
+
+  const res = await downloadProGifPack((done, total) => {
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    if (fill) fill.style.width = pct + '%';
+    if (label) label.textContent = `${done} / ${total}`;
+  });
+
+  if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+  if (!res.ok) {
+    showToast('❌ ' + (res.msg || 'حصلت مشكلة في التحميل'));
+    return;
+  }
+  if (btn) btn.textContent = '✓ تم تحميل مكتبة صور Pro';
+  showToast(res.failed > 0 ? `✓ اتحمل ${res.total - res.failed} من ${res.total}` : '✓ اتحملت كل الصور بنجاح');
+}
+
+async function downloadProGifPack(onProgress) {
+  const FS = _getFilesystemPlugin();
+  if (!FS) return { ok: false, msg: 'الميزة دي متاحة بس جوه تطبيق الأندرويد' };
+  if (!navigator.onLine) return { ok: false, msg: 'محتاج نت عشان تحمّل الصور' };
+  const proGifs = [...new Set(EXERCISES_DB.filter(e => e.isPro && e.gif).map(e => e.gif))];
+  let done = 0, failed = 0;
+  for (const gif of proGifs) {
+    try {
+      const res = await fetch(GIF_REMOTE_BASE + gif);
+      const blob = await res.blob();
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      await FS.writeFile({ path: `gifs/${gif}`, data: base64, directory: 'DATA', recursive: true });
+    } catch (e) { failed++; }
+    done++;
+    if (onProgress) onProgress(done, proGifs.length);
+  }
+  localStorage.setItem('tamreeni_pro_gifs_downloaded', '1');
+  return { ok: true, total: proGifs.length, failed };
+}
+
+async function openExGifDirect(gif, name) {
   const frame = document.getElementById('ex-gif-frame');
-  frame.innerHTML = `<img src="${src}" loading="lazy" alt="${name}" style="width:100%;height:100%;object-fit:contain;background:#fff">`;
-  document.getElementById('ex-gif-title').textContent = name || '';
+  const titleEl = document.getElementById('ex-gif-title');
+  titleEl.textContent = name || '';
   document.getElementById('ex-gif-modal').style.display = 'flex';
+  frame.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-family:var(--font-mono);font-size:12px">⏳ جاري التحميل...</div>';
+
+  const src = await _resolveGifSrc(gif);
+  if (!src) {
+    frame.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;padding:20px;text-align:center">
+      <div style="font-size:32px">📶</div>
+      <div style="color:var(--text-dim);font-family:var(--font-main);font-size:13px">محتاج نت عشان تشوف الحركة دي أول مرة<br>أو حمّل مكتبة الصور من صفحة حسابي</div>
+    </div>`;
+    return;
+  }
+  frame.innerHTML = `<img src="${src}" loading="lazy" alt="${name}" style="width:100%;height:100%;object-fit:contain;background:#fff">`;
 }
 function closeExGifModal() {
   document.getElementById('ex-gif-modal').style.display = 'none';
@@ -8265,6 +8378,23 @@ function renderAccount() {
       </div>
       <button onclick="requestBatteryOptExemption()" style="width:100%;background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.3);color:var(--gold);border-radius:10px;padding:12px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px">🔋 استبعاد من توفير البطارية</button>
     </div>
+
+    ${isPro ? `
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:12px;line-height:1.7">
+        صور حركة تمارين Pro مش متحملة جوه التطبيق عشان يفضل حجمه صغير — لو عايز تشوفها حتى من غير نت، حمّلها مرة واحدة وهتفضل محفوظة على جهازك.
+      </div>
+      <button id="gif-pack-btn" onclick="startGifPackDownload()" style="width:100%;background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.3);color:var(--gold);border-radius:10px;padding:12px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px">
+        ${localStorage.getItem('tamreeni_pro_gifs_downloaded') ? '✓ تم تحميل مكتبة صور Pro' : '📥 تحميل مكتبة صور تمارين Pro (~80 ميجا)'}
+      </button>
+      <div id="gif-pack-progress" style="display:none;margin-top:10px">
+        <div style="background:var(--bg3);border-radius:8px;height:8px;overflow:hidden">
+          <div id="gif-pack-fill" style="background:var(--gold);height:100%;width:0%;transition:width .2s"></div>
+        </div>
+        <div id="gif-pack-label" style="text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--text-muted);margin-top:6px">0 / 0</div>
+      </div>
+    </div>
+    ` : ''}
     ` : ''}
 
     <!-- Danger Zone -->
