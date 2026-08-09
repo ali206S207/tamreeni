@@ -2683,6 +2683,8 @@ var _swReg = null;
         </div>
       </div>
 
+      <div id="checkin-banner-wrap"></div>
+
       <div id="pwa-install-bar" style="display:none;margin-bottom:12px">
   <button onclick="installPWA()" style="width:100%;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;border-radius:10px;padding:13px;color:#fff;font-family:var(--font-mono);font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-shadow:0 0 24px var(--glow)">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v13M7 11l5 5 5-5"/><path d="M3 18h18v3H3z"/></svg>
@@ -4428,6 +4430,7 @@ function migrateState(s) {
   if (!s.restDays) s.restDays = [];
   if (!s.schedule) s.schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
   if (!s.progressPhotos) s.progressPhotos = [];
+  if (!s.checkIns) s.checkIns = {};
   return s;
 }
 
@@ -4556,6 +4559,25 @@ function renderWeekCompare() {
 }
 
 function renderDash() {
+  // Daily check-in banner
+  const ciWrap = document.getElementById('checkin-banner-wrap');
+  if (ciWrap) {
+    const trainingToday = getTrainingDayStr();
+    const already = state.checkIns[trainingToday];
+    if (already) {
+      ciWrap.innerHTML = '';
+    } else {
+      ciWrap.innerHTML = `
+        <div style="background:var(--bg2);border:1px solid var(--border-bright);border-radius:14px;padding:14px 16px;margin-bottom:16px">
+          <div style="font-family:var(--font-main);font-size:14px;font-weight:700;color:var(--text);margin-bottom:10px">سجّلت النهاردة؟ 🤔</div>
+          <div style="display:flex;gap:10px">
+            <button onclick="setCheckIn('trained')" style="flex:1;background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.35);color:var(--gold);border-radius:10px;padding:11px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer">✅ اتمرنت</button>
+            <button onclick="setCheckIn('rest')" style="flex:1;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-dim);border-radius:10px;padding:11px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer">😴 يوم راحة</button>
+          </div>
+        </div>`;
+    }
+  }
+
   // Update gym indicator in hero
   const gym = activeGym();
   const gymNameEl = document.getElementById('hero-gym-name');
@@ -5497,6 +5519,7 @@ function renderActiveExercises() {
         </div>
       </div>
       ${buildLastSessionBanner(ex.id)}
+      ${buildTrendInsight(ex.id)}
       <div id="sets-${ei}" style="padding:8px 10px 4px">
         ${ex.sets.map((s, si) => renderSetRow(ei, si, s)).join('')}
       </div>
@@ -5519,6 +5542,47 @@ function getLastExerciseSets(exId) {
     }
   }
   return [];
+}
+
+function getExerciseTrend(exId) {
+  const sessions = state.log
+    .map(l => {
+      const ex = (l.exercises || []).find(e => e.id === exId);
+      if (!ex) return null;
+      const doneSets = ex.sets.filter(s => s.done && parseFloat(s.weight) > 0);
+      if (!doneSets.length) return null;
+      const best = doneSets.reduce((a, b) => (parseFloat(b.weight) > parseFloat(a.weight) ? b : a));
+      return { date: l.date, weight: parseFloat(best.weight) || 0, reps: parseInt(best.reps) || 0 };
+    })
+    .filter(Boolean)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (sessions.length < 3) return null; // مش كفاية بيانات لحد دلوقتي
+
+  const last3 = sessions.slice(-3);
+  const declining = last3[0].weight >= last3[1].weight && last3[1].weight >= last3[2].weight && last3[0].weight > last3[2].weight;
+  const stuck = last3[0].weight === last3[1].weight && last3[1].weight === last3[2].weight;
+  const improving = last3[2].weight > last3[0].weight;
+
+  if (declining || stuck) {
+    return { type: 'deload', msg: 'آخر كام مرة الوزن ثابت أو نازل — جرب تقلل حوالي 10% وركّز على العدات', icon: '⚠️' };
+  }
+  if (improving) {
+    return { type: 'push', msg: 'شغلك ماشي كويس ومتزايد! جاهز تكسر رقمك النهاردة؟', icon: '🔥' };
+  }
+  return null;
+}
+
+function buildTrendInsight(exId) {
+  const trend = getExerciseTrend(exId);
+  if (!trend) return '';
+  const color = trend.type === 'deload' ? 'var(--red)' : 'var(--gold)';
+  const bg = trend.type === 'deload' ? 'rgba(224,48,48,0.08)' : 'rgba(41,121,255,0.08)';
+  const border = trend.type === 'deload' ? 'rgba(224,48,48,0.25)' : 'rgba(41,121,255,0.25)';
+  return `<div style="margin:8px 10px 0;background:${bg};border:1px solid ${border};border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:8px">
+    <span style="font-size:16px">${trend.icon}</span>
+    <span style="font-size:12px;color:${color};font-family:var(--font-main);font-weight:600;line-height:1.5">${trend.msg}</span>
+  </div>`;
 }
 
 function buildLastSessionBanner(exId) {
@@ -5875,6 +5939,7 @@ function saveWorkoutLog() {
   state.activeWorkout = null;
   state.workoutStartTime = null;
   markTodayAsWorkout(logDate);
+  state.checkIns[getTrainingDayStr(new Date(logDate))] = 'trained';
   saveState();
   window._pendingLog = null;
   activeWorkout = null;
@@ -6133,7 +6198,21 @@ async function deleteEvolutionPhoto(id) {
   const ok = await appConfirmDanger('تحذف الصورة دي؟');
   if (!ok) return;
   state.progressPhotos = state.progressPhotos.filter(p => p.id !== id);
+  _evoSelected = _evoSelected.filter(sid => sid !== id);
   saveState();
+  renderEvolution();
+}
+
+let _evoSelected = [];
+
+function evoToggleSelect(id) {
+  const idx = _evoSelected.indexOf(id);
+  if (idx > -1) {
+    _evoSelected.splice(idx, 1);
+  } else {
+    if (_evoSelected.length >= 2) _evoSelected.shift(); // شيل الأقدم واختار الجديد
+    _evoSelected.push(id);
+  }
   renderEvolution();
 }
 
@@ -6152,37 +6231,53 @@ function renderEvolution() {
     return;
   }
 
+  // Default selection: أول صورة وآخر صورة (المستخدم يقدر يغيّرها)
+  if (_evoSelected.length === 0 && photos.length >= 2) {
+    _evoSelected = [photos[0].id, photos[photos.length - 1].id];
+  }
+
+  const selPhotos = _evoSelected.map(id => photos.find(p => p.id === id)).filter(Boolean);
   let compareHtml = '';
-  if (photos.length >= 2) {
-    const first = photos[0], last = photos[photos.length - 1];
+  if (selPhotos.length === 2) {
+    const [a, b] = selPhotos.sort((x, y) => new Date(x.date) - new Date(y.date));
     compareHtml = `
-      <div class="section-title">قبل / بعد</div>
+      <div class="section-title">المقارنة</div>
       <div class="card" style="padding:14px;margin-bottom:18px">
         <div style="display:flex;gap:8px">
           <div style="flex:1;text-align:center">
-            <img src="${first.photo}" style="width:100%;border-radius:12px;object-fit:cover;aspect-ratio:3/4">
-            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-family:var(--font-mono)">${first.date}</div>
+            <img src="${a.photo}" style="width:100%;border-radius:12px;object-fit:cover;aspect-ratio:3/4">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;font-family:var(--font-mono)">${a.date}</div>
           </div>
           <div style="flex:1;text-align:center">
-            <img src="${last.photo}" style="width:100%;border-radius:12px;object-fit:cover;aspect-ratio:3/4">
-            <div style="font-size:11px;color:var(--gold);margin-top:6px;font-family:var(--font-mono);font-weight:700">${last.date}</div>
+            <img src="${b.photo}" style="width:100%;border-radius:12px;object-fit:cover;aspect-ratio:3/4">
+            <div style="font-size:11px;color:var(--gold);margin-top:6px;font-family:var(--font-mono);font-weight:700">${b.date}</div>
           </div>
         </div>
       </div>
     `;
+  } else {
+    compareHtml = `<div style="text-align:center;padding:10px 0 18px;color:var(--text-muted);font-family:var(--font-mono);font-size:11px">اختار صورتين من تحت عشان تقارن بينهم</div>`;
   }
 
-  const timelineHtml = photos.slice().reverse().map(p => `
-    <div style="display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:8px">
-      <img src="${p.photo}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0">
-      <div style="flex:1;font-family:var(--font-mono);font-size:13px;color:var(--text-dim)">${p.date}</div>
-      <button class="icon-btn-danger" onclick="deleteEvolutionPhoto('${p.id}')">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
+  const gridHtml = `
+    <div class="section-title">كل الصور (${photos.length}) — دوس على صورتين تقارن بينهم</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px">
+      ${photos.slice().reverse().map(p => {
+        const isSel = _evoSelected.includes(p.id);
+        return `
+        <div style="position:relative" onclick="evoToggleSelect('${p.id}')">
+          <img src="${p.photo}" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:10px;border:2px solid ${isSel ? 'var(--gold)' : 'transparent'};opacity:${isSel ? '1' : '0.85'};cursor:pointer">
+          ${isSel ? `<div style="position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:50%;background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800">✓</div>` : ''}
+          <div style="position:absolute;bottom:4px;left:4px;right:4px;background:rgba(0,0,0,0.6);border-radius:6px;padding:2px 4px;text-align:center;font-family:var(--font-mono);font-size:9px;color:#fff">${p.date}</div>
+          <button onclick="event.stopPropagation();deleteEvolutionPhoto('${p.id}')" style="position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:rgba(224,48,48,0.85);border:none;color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>`;
+      }).join('')}
     </div>
-  `).join('');
+  `;
 
-  el.innerHTML = compareHtml + `<div class="section-title">كل الصور</div>` + timelineHtml;
+  el.innerHTML = compareHtml + gridHtml;
 }
 
 function checkEvolutionReminder() {
@@ -6547,6 +6642,16 @@ function numpadStep(delta) {
 // ── AUTO REST DAY TRACKING ──
 const DAILY_CHECKIN_NOTIF_ID = 778830;
 
+function saveCheckInTime() {
+  const val = document.getElementById('checkin-time-input').value; // "HH:MM"
+  if (!val) return;
+  const [h, m] = val.split(':');
+  localStorage.setItem('tamreeni_checkin_hour', h);
+  localStorage.setItem('tamreeni_checkin_minute', m);
+  scheduleDailyCheckIn();
+  showToast('✓ اتحفظ وقت التذكير');
+}
+
 async function scheduleDailyCheckIn() {
   if (!window.isNativeApp) return;
   const LN = _getLocalNotifPlugin();
@@ -6557,32 +6662,57 @@ async function scheduleDailyCheckIn() {
       const perm = await LN.checkPermissions();
       if (perm.display !== 'granted') await LN.requestPermissions();
     }
+    const hour = parseInt(localStorage.getItem('tamreeni_checkin_hour')) || 20;
+    const minute = parseInt(localStorage.getItem('tamreeni_checkin_minute')) || 0;
     await LN.cancel({ notifications: [{ id: DAILY_CHECKIN_NOTIF_ID }] });
     await LN.schedule({
       notifications: [{
         id: DAILY_CHECKIN_NOTIF_ID,
         title: '📋 تسجيل يومي',
         body: 'اتمرنت النهاردة؟ افتح تمرينتي وسجّل — لو نسيت، النهاردة هيتحسب راحة تلقائي',
-        schedule: { on: { hour: 19, minute: 0 }, repeats: true, allowWhileIdle: true },
+        schedule: { on: { hour, minute }, repeats: true, allowWhileIdle: true },
         smallIcon: 'ic_launcher',
       }]
     });
   } catch (e) { console.warn('scheduleDailyCheckIn failed', e); }
 }
 
+// اليوم التدريبي بيبدأ الساعة 4 الفجر مش 12 بالليل — يعني لو الساعة 2 فجرًا لسه بنعتبرها "امبارح"
+function getTrainingDayStr(date = new Date()) {
+  const d = new Date(date);
+  if (d.getHours() < 4) d.setDate(d.getDate() - 1);
+  return dateStr(new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0));
+}
+
+function setCheckIn(status) {
+  const today = getTrainingDayStr();
+  state.checkIns[today] = status; // 'trained' | 'rest'
+  if (status === 'rest') {
+    if (!state.restDays.includes(today)) state.restDays.push(today);
+  } else {
+    state.restDays = state.restDays.filter(d => d !== today);
+  }
+  saveState();
+  renderDash();
+  showToast(status === 'rest' ? '😴 اتسجل يوم راحة' : '✅ جامد، يوم شغل!');
+}
+
 function checkAndMarkRestDay() {
   const lastChecked = localStorage.getItem('tamreeni_last_restcheck_' + activeGymId);
-  const today = dateStr(new Date());
+  const today = getTrainingDayStr();
   // ابدأ من أول يوم بعد آخر فحص (أو من امبارح لو أول مرة) لحد امبارح — عشان لو فتحت التطبيق بعد كذا يوم يتحسبوا كلهم راحة مش يوم واحد بس
   let startFrom = lastChecked ? new Date(lastChecked) : new Date(Date.now() - 86400000);
-  const endAt = new Date(Date.now() - 86400000); // امبارح
+  const endAt = new Date(Date.now() - 86400000); // امبارح (بمقياس اليوم التدريبي)
   let changed = false;
   for (let d = new Date(startFrom); d <= endAt; d.setDate(d.getDate() + 1)) {
-    const ds = dateStr(d);
-    const hasWorkout = state.log.some(l => l.date === ds && l.type !== 'REST');
+    const ds = getTrainingDayStr(d);
+    const explicit = state.checkIns[ds]; // لو المستخدم سجّل بنفسه، منلمسوش
+    if (explicit) continue;
+    const hasWorkout = state.log.some(l => getTrainingDayStr(new Date(l.date)) === ds && l.type !== 'REST');
     const hasRest = state.restDays.includes(ds);
     if (!hasWorkout && !hasRest) {
       state.restDays.push(ds);
+      state.checkIns[ds] = 'rest'; // اتحسبت أوتوماتيك عشان محدش سجّل
       changed = true;
     }
   }
@@ -6599,17 +6729,18 @@ function markTodayAsWorkout(date) {
 // Run on load
 checkAndMarkRestDay();
 
-// Schedule midnight check
+// Schedule check عند بداية اليوم التدريبي (4 الفجر) بدل نص الليل
 function scheduleMidnightCheck() {
   const now = new Date();
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 30, 0); // 00:00:30 next day
-  const msToMidnight = midnight - now;
+  const next4am = new Date(now);
+  next4am.setHours(4, 0, 30, 0);
+  if (next4am <= now) next4am.setDate(next4am.getDate() + 1);
+  const msTo4am = next4am - now;
   setTimeout(() => {
     checkAndMarkRestDay();
     renderDash();
     scheduleMidnightCheck();
-  }, msToMidnight);
+  }, msTo4am);
 }
 scheduleMidnightCheck();
 
@@ -8377,6 +8508,18 @@ function renderAccount() {
         بعض الأجهزة (شاومي، هواوي، أوبو...) بتقفل التطبيقات في الخلفية توفيرًا للبطارية، وده ممكن يوقف تايمر الراحة لو الشاشة مقفولة. استبعد تمرينتي من توفير البطارية عشان يفضل شغال دايمًا.
       </div>
       <button onclick="requestBatteryOptExemption()" style="width:100%;background:rgba(41,121,255,0.1);border:1px solid rgba(41,121,255,0.3);color:var(--gold);border-radius:10px;padding:12px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer;letter-spacing:1px">🔋 استبعاد من توفير البطارية</button>
+    </div>
+
+    <!-- Daily check-in time -->
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px">
+      <div style="font-size:13px;color:var(--text-dim);margin-bottom:10px;line-height:1.7">
+        وقت التذكير اليومي بتسجيل التمرين
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input type="time" id="checkin-time-input" value="${String(localStorage.getItem('tamreeni_checkin_hour')||'20').padStart(2,'0')}:${String(localStorage.getItem('tamreeni_checkin_minute')||'0').padStart(2,'0')}"
+          style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font-mono);font-size:14px;padding:10px;text-align:center">
+        <button onclick="saveCheckInTime()" style="background:var(--gold);border:none;color:#fff;border-radius:10px;padding:10px 16px;font-family:var(--font-mono);font-size:12px;font-weight:700;cursor:pointer">حفظ</button>
+      </div>
     </div>
 
     ${isPro ? `
