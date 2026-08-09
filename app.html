@@ -5519,7 +5519,7 @@ function renderActiveExercises() {
         </div>
       </div>
       ${buildLastSessionBanner(ex.id)}
-      ${buildTrendInsight(ex.id)}
+      ${buildTrendInsight(ei, ex.id)}
       <div id="sets-${ei}" style="padding:8px 10px 4px">
         ${ex.sets.map((s, si) => renderSetRow(ei, si, s)).join('')}
       </div>
@@ -5544,6 +5544,11 @@ function getLastExerciseSets(exId) {
   return [];
 }
 
+function _roundToPlate(w) {
+  // نقرّب لأقرب 2.5 كيلو (زي أوزان الأطقم الحقيقية)
+  return Math.round(w / 2.5) * 2.5;
+}
+
 function getExerciseTrend(exId) {
   const sessions = state.log
     .map(l => {
@@ -5560,29 +5565,55 @@ function getExerciseTrend(exId) {
   if (sessions.length < 3) return null; // مش كفاية بيانات لحد دلوقتي
 
   const last3 = sessions.slice(-3);
+  const currentWeight = last3[2].weight;
   const declining = last3[0].weight >= last3[1].weight && last3[1].weight >= last3[2].weight && last3[0].weight > last3[2].weight;
   const stuck = last3[0].weight === last3[1].weight && last3[1].weight === last3[2].weight;
   const improving = last3[2].weight > last3[0].weight;
 
   if (declining || stuck) {
-    return { type: 'deload', msg: 'آخر كام مرة الوزن ثابت أو نازل — جرب تقلل حوالي 10% وركّز على العدات', icon: '⚠️' };
+    let suggested = _roundToPlate(currentWeight * 0.9);
+    if (suggested >= currentWeight) suggested = _roundToPlate(currentWeight - 2.5);
+    if (suggested < 0) suggested = 0;
+    return {
+      type: 'deload',
+      msg: `آخر كام مرة الوزن ثابت أو نازل — جرب ${suggested}kg بدل ${currentWeight}kg وركّز على العدات`,
+      suggestedWeight: suggested,
+      icon: '⚠️'
+    };
   }
   if (improving) {
-    return { type: 'push', msg: 'شغلك ماشي كويس ومتزايد! جاهز تكسر رقمك النهاردة؟', icon: '🔥' };
+    const suggested = _roundToPlate(currentWeight + Math.max(2.5, currentWeight * 0.025));
+    return {
+      type: 'push',
+      msg: `شغلك ماشي كويس! جرب ${suggested}kg بدل ${currentWeight}kg وحاول تكسر رقمك`,
+      suggestedWeight: suggested,
+      icon: '🔥'
+    };
   }
   return null;
 }
 
-function buildTrendInsight(exId) {
+function buildTrendInsight(ei, exId) {
   const trend = getExerciseTrend(exId);
   if (!trend) return '';
   const color = trend.type === 'deload' ? 'var(--red)' : 'var(--gold)';
   const bg = trend.type === 'deload' ? 'rgba(224,48,48,0.08)' : 'rgba(41,121,255,0.08)';
   const border = trend.type === 'deload' ? 'rgba(224,48,48,0.25)' : 'rgba(41,121,255,0.25)';
-  return `<div style="margin:8px 10px 0;background:${bg};border:1px solid ${border};border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:8px">
-    <span style="font-size:16px">${trend.icon}</span>
-    <span style="font-size:12px;color:${color};font-family:var(--font-main);font-weight:600;line-height:1.5">${trend.msg}</span>
+  return `<div style="margin:8px 10px 0;background:${bg};border:1px solid ${border};border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:10px">
+    <span style="font-size:16px;flex-shrink:0">${trend.icon}</span>
+    <span style="font-size:12px;color:${color};font-family:var(--font-main);font-weight:600;line-height:1.5;flex:1">${trend.msg}</span>
+    <button onclick="applySuggestedWeight(${ei},${trend.suggestedWeight})" style="flex-shrink:0;background:${color};color:#fff;border:none;border-radius:8px;padding:6px 12px;font-family:var(--font-mono);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">طبّق</button>
   </div>`;
+}
+
+function applySuggestedWeight(ei, weight) {
+  const sets = activeWorkout.exercises[ei].sets;
+  sets.forEach(s => { if (!s.done) s.weight = weight; });
+  state.activeWorkout = activeWorkout;
+  saveState();
+  const container = document.getElementById(`sets-${ei}`);
+  if (container) container.innerHTML = sets.map((s, i) => renderSetRow(ei, i, s)).join('');
+  showToast(`✓ اتطبّق ${weight}kg على السيتات اللي لسه`);
 }
 
 function buildLastSessionBanner(exId) {
