@@ -45,8 +45,7 @@ class WorkoutTimerPlugin : Plugin() {
     @PluginMethod
     fun stop(call: PluginCall) {
         val intent = Intent(context, WorkoutForegroundService::class.java)
-        intent.action = WorkoutForegroundService.ACTION_STOP
-        ContextCompat.startForegroundService(context, intent)
+        context.stopService(intent)
         call.resolve()
     }
 

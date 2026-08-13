@@ -58,6 +58,7 @@ class WorkoutForegroundService : Service() {
             ACTION_RESUME_WORKOUT -> {
                 mode = "workout"
                 if (workoutStart == 0L) workoutStart = System.currentTimeMillis()
+                startForeground(NOTIF_ID, buildNotification("⏱ تمرينتي شغالة", "مدة التمرين: 0:00", false))
                 acquireWakeLock()
                 startTicking()
             }
@@ -66,6 +67,7 @@ class WorkoutForegroundService : Service() {
                 mode = "rest"
                 restEnd = System.currentTimeMillis() + seconds * 1000L
                 restRang = false
+                startForeground(NOTIF_ID, buildNotification("🔥 الراحة شغالة", "متبقي " + fmt(seconds), false))
                 acquireWakeLock()
                 startTicking()
             }
