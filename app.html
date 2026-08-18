@@ -7768,7 +7768,7 @@ function _isBarbell(ei) {
   return dbEx && (dbEx.type === 'Barbell' || (dbEx.equipment||'').toLowerCase().includes('barbell'));
 }
 
-function _roundToPlate(weight, barWeight) {
+function _roundToPlateWithBar(weight, barWeight) {
   const load = Math.max(0, weight - barWeight);
   const perSide = Math.round((load / 2) / 2.5) * 2.5;
   return barWeight + perSide * 2;
@@ -7822,7 +7822,7 @@ function openGuidedWarmup(ei) {
   _gwSets = steps.map(step => {
     let weight = step.pct === 0
       ? (isBar ? barWeight : Math.round(workWeight * 0.20 / 2.5) * 2.5)
-      : (isBar ? _roundToPlate(workWeight * step.pct, barWeight) : Math.round(workWeight * step.pct / 2.5) * 2.5);
+      : (isBar ? _roundToPlateWithBar(workWeight * step.pct, barWeight) : Math.round(workWeight * step.pct / 2.5) * 2.5);
     weight = Math.max(weight, isBar ? barWeight : 0);
     const reps = _calcWarmupReps(avgReps, volumeFactor, step.pct);
     return { weight, reps: Math.max(1, reps), label: step.label, purpose: step.purpose, rest: GW_REST_TIMES[step.restIdx] };
